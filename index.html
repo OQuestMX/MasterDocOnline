@@ -449,713 +449,511 @@ textarea.form-input{min-height:70px;line-height:1.5}
    ══════════════════════════════════════════════ */
 .flex-between{display:flex;align-items:center;justify-content:space-between}
 .mb-16{margin-bottom:16px}
+
+/* MODAL */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);width:100%;max-width:600px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:24px}
+.modal::-webkit-scrollbar{display:none}
+.modal-title{font-size:18px;font-weight:700;font-family:var(--serif);margin-bottom:16px;color:var(--ink)}
+.modal-actions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+.form-row{display:flex;gap:12px}
+.form-row>*{flex:1}
+.empty-state{text-align:center;padding:40px 20px;color:var(--ink4)}
+.empty-state-title{font-size:16px;font-weight:600;color:var(--ink3);margin-bottom:8px}
+.empty-state-desc{font-size:14px;margin-bottom:16px;line-height:1.5}
+.entity-list-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;min-height:44px;display:flex;align-items:center;justify-content:space-between}
+.entity-list-item:active{background:var(--bg)}
+.entity-list-item.selected{background:var(--gold-pale);border-left:4px solid var(--gold)}
+.delete-btn{color:var(--red);background:none;border:none;font-size:18px;cursor:pointer;padding:4px 8px;min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:center}
+.inline-edit{background:var(--surface2);border:2px solid var(--border);border-radius:var(--r);padding:10px 12px;font-size:14px;width:100%;font-family:var(--font);color:var(--ink)}
+.inline-edit:focus{outline:none;border-color:var(--gold)}
+.tag-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.move-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px}
+.move-item input[type=checkbox]{width:20px;height:20px}
+.move-done{text-decoration:line-through;color:var(--ink4)}
 </style>
 </head>
 <body>
 
 <aside class="sidebar">
-  <div class="sb-brand">
-    <div class="sb-brand-name">EPIC</div>
-    <div class="sb-brand-sub">STORY MASTER</div>
-  </div>
-  <div class="sb-campaign">
-    <div class="sb-campaign-label">CAMPAÑA ACTIVA</div>
-    <div class="sb-campaign-name">La Marca Oscura</div>
-    <div class="sb-campaign-session">Sesión 3 · Arco I</div>
-  </div>
+  <div class="sb-brand"><div class="sb-brand-name">EPIC</div><div class="sb-brand-sub">STORY MASTER</div></div>
+  <div class="sb-campaign" id="sb-campaign-info"></div>
   <nav class="sb-nav">
-    <div class="sb-item active" onclick="switchView('campaign')"><div class="sb-item-icon">📜</div><div class="sb-item-name">Campaña</div></div>
-    <div class="sb-item" onclick="switchView('scenes')"><div class="sb-item-icon">🎬</div><div class="sb-item-name">Escenas</div></div>
-    <div class="sb-item" onclick="switchView('library')"><div class="sb-item-icon">📖</div><div class="sb-item-name">Biblioteca</div></div>
-    <div class="sb-item" onclick="switchView('players')"><div class="sb-item-icon">👥</div><div class="sb-item-name">Personajes</div></div>
-    <div class="sb-item" onclick="switchView('session')"><div class="sb-item-icon">⚡</div><div class="sb-item-name">Sesión en Vivo</div></div>
+    <div class="sb-item active" onclick="nav('campaign')"><div class="sb-item-icon">📜</div><div class="sb-item-name">Campaña</div></div>
+    <div class="sb-item" onclick="nav('scenes')"><div class="sb-item-icon">🎬</div><div class="sb-item-name">Escenas</div></div>
+    <div class="sb-item" onclick="nav('library')"><div class="sb-item-icon">📖</div><div class="sb-item-name">Biblioteca</div></div>
+    <div class="sb-item" onclick="nav('players')"><div class="sb-item-icon">👥</div><div class="sb-item-name">Personajes</div></div>
+    <div class="sb-item" onclick="nav('session')"><div class="sb-item-icon">⚡</div><div class="sb-item-name">Sesión en Vivo</div></div>
   </nav>
   <hr class="sb-divider">
-  <div class="sb-players">
-    <div class="sb-players-label">EN MESA</div>
-    <div class="sb-player-list">
-      <div class="sb-player" style="background:#2d3a5e;color:#8aa4d4" title="Eneas — Casa Vorin">E</div>
-      <div class="sb-player" style="background:#5e2d2d;color:#d48a8a" title="Valeska — Orden Escarlata">V</div>
-      <div class="sb-player" style="background:#2d5e3a;color:#8ad48a" title="Arken — Casa Cherán">A</div>
-      <div class="sb-player" style="background:#5e2d5e;color:#d48ad4" title="Lyra — Pueblos sin Techo">L</div>
-    </div>
-  </div>
-  <div class="sb-settings" onclick="switchView('settings')">⚙️ Configuración</div>
+  <div class="sb-players" id="sb-players-bar"></div>
+  <div class="sb-settings" onclick="nav('settings')">⚙️ Configuración</div>
 </aside>
-
 <div class="main">
   <div class="topbar">
-    <div class="breadcrumb" id="breadcrumb">📜 Campaña › Arco I › <span>Sesión 3</span></div>
+    <div class="breadcrumb" id="breadcrumb"></div>
     <div class="topbar-spacer"></div>
-    <button class="btn btn-gold" id="btn-add-scene" onclick="addSporadicScene()">+ Escena rápida</button>
+    <button class="btn btn-gold" onclick="openModal('scene',null)">+ Escena rápida</button>
   </div>
-
   <div class="content">
-
-    <!-- ════════ CAMPAIGN ════════ -->
-    <div class="view active" id="view-campaign">
-      <div class="section-label">ARCO NARRATIVO</div>
-      <div class="beats-row">
-        <div class="beat-card active" onclick="selectBeat(this)"><div class="beat-num">BEAT 1</div><div class="beat-name">La llamada a la aventura</div><div class="beat-status">3 escenas · Sesión 1–2</div><div class="beat-bar"><div class="beat-fill" style="width:100%"></div></div></div>
-        <div class="beat-connector">—</div>
-        <div class="beat-card" onclick="selectBeat(this)"><div class="beat-num">BEAT 2</div><div class="beat-name">El primer encuentro</div><div class="beat-status">4 escenas · Sesión 3</div><div class="beat-bar"><div class="beat-fill" style="width:50%"></div></div></div>
-        <div class="beat-connector">—</div>
-        <div class="beat-card dim" onclick="selectBeat(this)"><div class="beat-num">BEAT 3</div><div class="beat-name">La traición</div><div class="beat-status">Pendiente</div><div class="beat-bar"><div class="beat-fill" style="width:0%"></div></div></div>
-        <div class="beat-connector">—</div>
-        <div class="beat-card dim" onclick="selectBeat(this)"><div class="beat-num">BEAT 4</div><div class="beat-name">El clímax</div><div class="beat-status">Pendiente</div><div class="beat-bar"><div class="beat-fill" style="width:0%"></div></div></div>
-        <div style="flex-shrink:0;display:flex;align-items:center"><button class="btn" title="Agregar beat">+</button></div>
-      </div>
-      <div class="scenes-header flex-between">
-        <div class="section-label" style="margin:0">ESCENAS — SESIÓN 3</div>
-        <button class="btn" onclick="switchView('scenes')">+ Nueva escena</button>
-      </div>
-      <div class="scene-grid">
-        <div class="scene-card combat" onclick="openScene()">
-          <span class="scene-badge badge-combat">Combate</span>
-          <span class="scene-status status-debrief">✓ Debrief</span>
-          <div class="scene-name">Emboscada en el puente</div>
-          <div class="scene-detail">Hook: Los árboles se silencian de golpe</div>
-          <div class="scene-detail">4 Sombras + 1 Capitán de la Marca</div>
-          <div class="scene-flag flag-consequence">⚠ El capitán escapó herido — sabe dónde están</div>
-          <div style="margin-top:10px"><button class="btn btn-primary" onclick="event.stopPropagation();startCombat(sampleEncounter)" style="width:100%;justify-content:center">Iniciar combate</button></div>
-        </div>
-        <div class="scene-card social" onclick="openScene()">
-          <span class="scene-badge badge-social">Social</span>
-          <span class="scene-status status-debrief">✓ Debrief</span>
-          <div class="scene-name">El Consejo del Alcalde</div>
-          <div class="scene-detail">NPCs: Alcalde Brenn, Spy Lysa</div>
-          <div class="scene-detail">Revela: La marca en el mapa antiguo</div>
-          <div class="scene-flag flag-personal">🎭 Eneas recibió info de Casa Vorin sobre su padre</div>
-        </div>
-        <div class="scene-card sporadic" onclick="openScene()">
-          <span class="scene-badge badge-sporadic">Esporádica</span>
-          <span class="scene-status status-active">▶ Activa</span>
-          <div class="scene-name">La tienda del alquimista</div>
-          <div class="scene-detail">Comercio / Exploración</div>
-          <div class="scene-detail">NPC: Gruk (creado al vuelo)</div>
-        </div>
-        <div class="scene-card exploration" onclick="openScene()">
-          <span class="scene-badge badge-exploration">Exploración</span>
-          <span class="scene-status status-ready">Lista</span>
-          <div class="scene-name">Las ruinas bajo el molino</div>
-          <div class="scene-detail">Hook: Ruidos bajo la tierra por la noche</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════════ SCENE BUILDER ════════ -->
-    <div class="view" id="view-scenes">
-      <div class="section-label">SCENE BUILDER</div>
-      <div class="type-selector">
-        <div class="type-option selected" data-type="combat" onclick="selectType(this)"><span class="dot"></span> Combate</div>
-        <div class="type-option" data-type="social" onclick="selectType(this)"><span class="dot"></span> Social</div>
-        <div class="type-option" data-type="exploration" onclick="selectType(this)"><span class="dot"></span> Exploración</div>
-        <div class="type-option" data-type="revelation" onclick="selectType(this)"><span class="dot"></span> Revelación</div>
-      </div>
-      <div class="builder-layout">
-        <div class="builder-main">
-          <div class="builder-tabs">
-            <div class="builder-tab active" onclick="switchBuilderTab(this,'setup')">Setup</div>
-            <div class="builder-tab" onclick="switchBuilderTab(this,'participants')">Participantes</div>
-            <div class="builder-tab" onclick="switchBuilderTab(this,'objectives')">Objetivos</div>
-            <div class="builder-tab" onclick="switchBuilderTab(this,'notes')">Notas DM</div>
-            <div class="builder-tab tab-debrief" onclick="switchBuilderTab(this,'debrief')">Debrief</div>
-          </div>
-
-          <!-- SETUP -->
-          <div class="builder-panel active" id="panel-setup">
-            <div class="form-section"><div class="form-label">NOMBRE DE LA ESCENA</div><input class="form-input" type="text" placeholder="Ej: Emboscada en el puente de Thornwall"></div>
-            <div class="form-section"><div class="form-label">HOOK — ¿Cómo abre la escena?</div><textarea class="form-input" placeholder="La descripción ambiental, el sonido, lo primero que perciben los jugadores..."></textarea></div>
-            <div class="form-section"><div class="form-label">CONFLICTO — ¿Qué hay que resolver?</div><textarea class="form-input" placeholder="El problema central. Combate: enemigos y terreno. Social: la tensión entre los NPCs..."></textarea></div>
-            <div class="form-section"><div class="form-label">STAKES</div><div class="stakes-row"><div class="stake-box stake-fail"><div class="stake-label">SI FALLAN</div><textarea class="form-input" placeholder="¿Qué pierden? ¿Qué empeora?"></textarea></div><div class="stake-box stake-win"><div class="stake-label">SI TRIUNFAN</div><textarea class="form-input" placeholder="¿Qué ganan? ¿Qué se desbloquea?"></textarea></div></div></div>
-            <div class="form-section"><div class="form-label">BEAT DE SALIDA — ¿Cómo conecta con lo siguiente?</div><textarea class="form-input" placeholder="La frase final, la revelación, el cliffhanger..."></textarea></div>
-
-            <!-- Lair Actions (combat only) -->
-            <div class="form-section combat-only visible">
-              <div class="form-label">LAIR ACTIONS — El mundo reacciona (solo combate)</div>
-              <div class="lair-section">
-                <label class="lair-check"><input type="checkbox" checked> La niebla se espesa — visibilidad reducida</label>
-                <label class="lair-check"><input type="checkbox"> El terreno colapsa — movimiento difícil</label>
-                <label class="lair-check"><input type="checkbox"> El fuego se expande — daño por zona</label>
-                <label class="lair-check"><input type="checkbox"> Cae un árbol — bloquea camino</label>
-                <label class="lair-check"><input type="checkbox"> Refuerzos enemigos llegan</label>
-                <label class="lair-check"><input type="checkbox"> Descarga arcana — daño aleatorio</label>
-                <label class="lair-check"><input type="checkbox"> Sube el agua — terreno cambia</label>
-                <label class="lair-check"><input type="checkbox"> Se abre el suelo — peligro de caída</label>
-                <textarea class="form-input" style="margin-top:8px;background:var(--surface)" placeholder="Lair Actions personalizadas..."></textarea>
-              </div>
-            </div>
-
-            <!-- Recompensas -->
-            <div class="form-section">
-              <div class="form-label">RECOMPENSAS DE ESTA ESCENA</div>
-              <div style="display:flex;gap:8px;margin-bottom:10px">
-                <button class="btn">+ Desde biblioteca</button>
-                <button class="btn">+ Crear item</button>
-              </div>
-              <div class="loot-card">
-                <span class="loot-rarity rarity-uncommon">Poco común</span>
-                <div class="loot-name">Antídoto de Gruk</div>
-                <div class="loot-type">Consumible · Se entrega si triunfan</div>
-                <div class="loot-effect">Cura veneno de sombra. Uso único. Puede salvar al Alcalde Brenn en la Sesión 4.</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- PARTICIPANTS -->
-          <div class="builder-panel" id="panel-participants">
-            <div class="form-section">
-              <div class="flex-between mb-16"><div class="form-label" style="margin:0">NPCs EN ESTA ESCENA</div><button class="btn">+ Desde biblioteca</button></div>
-              <div class="npc-card">
-                <div class="npc-name">Gruk el Alquimista</div>
-                <div class="npc-role">Goblin · Comerciante · Neutral caótico</div>
-                <div class="npc-detail">Motivación: Sobrevivir y acumular secretos<br>Sabe: La marca es de la Orden Negra<br>Quiere: Que lo protejan del gremio</div>
-                <div class="npc-voice">"Gruk sabe cosas, sí sí... pero Gruk no regala."</div>
-              </div>
-              <button class="btn" style="width:100%;justify-content:center">+ Crear NPC al vuelo</button>
-            </div>
-            <div class="form-section combat-only visible">
-              <div class="flex-between mb-16"><div class="form-label" style="margin:0">CRIATURAS EN COMBATE</div><button class="btn">+ Desde bestiario</button></div>
-              <div class="creature-card">
-                <div style="display:flex;align-items:center;justify-content:space-between"><div><span class="creature-name">Sombra de la Marca</span><span style="color:var(--ink3);font-size:13px"> ×4</span></div><span class="difficulty-tag diff-medium">Medio</span></div>
-                <div class="creature-type">No-muerto · Soldado corrupto</div>
-                <div class="creature-stats-row"><span class="creature-stat hp">HP 15 c/u</span><span class="creature-stat dmg">Daño 4–8</span><span class="creature-stat special">Toque corrupto</span></div>
-              </div>
-              <div class="creature-card">
-                <div style="display:flex;align-items:center;justify-content:space-between"><div><span class="creature-name">Capitán de la Marca</span><span style="color:var(--ink3);font-size:13px"> ×1</span></div><span class="difficulty-tag diff-hard">Duro</span></div>
-                <div class="creature-type">Humanoide · Líder táctico</div>
-                <div class="creature-stats-row"><span class="creature-stat hp">HP 30</span><span class="creature-stat dmg">Daño 6–12</span><span class="creature-stat special">Grito de mando</span></div>
-              </div>
-              <button class="btn" style="width:100%;justify-content:center">+ Crear criatura al vuelo</button>
-              <div class="difficulty-meter"><div class="dm-label">DIFICULTAD ESTIMADA</div><div class="dm-bar"><div class="dm-fill medium"></div></div><div class="dm-text"><span style="color:var(--orange);font-weight:600">Desafiante</span><span style="color:var(--ink3)">4 Sombras + 1 Capitán vs Plano 2–3</span></div></div>
-            </div>
-          </div>
-
-          <!-- OBJECTIVES -->
-          <div class="builder-panel" id="panel-objectives">
-            <div class="form-section"><div class="form-label">CAPA 1 — OBJETIVO DE SESIÓN (visible para todos)</div><input class="form-input" type="text" placeholder="La misión macro. Ej: Descubrir qué hay bajo el molino"></div>
-            <div class="form-section"><div class="form-label">CAPA 2 — OBJETIVOS DE ESCENA (pintarrón)</div><textarea class="form-input" placeholder="• Hablar con el alquimista&#10;• Conseguir el antídoto&#10;• No revelar que saben de la Marca"></textarea></div>
-            <div class="form-section"><div class="form-label">CAPA 3 — OBJETIVOS PERSONALES (privado por jugador)</div>
-              <div style="display:flex;flex-direction:column;gap:10px">
-                <div style="display:flex;gap:10px;align-items:center"><div class="sb-player" style="background:#2d3a5e;color:#8aa4d4">E</div><input class="form-input" type="text" placeholder="Objetivo personal de Eneas..." style="flex:1"></div>
-                <div style="display:flex;gap:10px;align-items:center"><div class="sb-player" style="background:#5e2d2d;color:#d48a8a">V</div><input class="form-input" type="text" placeholder="Objetivo personal de Valeska..." style="flex:1"></div>
-                <div style="display:flex;gap:10px;align-items:center"><div class="sb-player" style="background:#2d5e3a;color:#8ad48a">A</div><input class="form-input" type="text" placeholder="Objetivo personal de Arken..." style="flex:1"></div>
-                <div style="display:flex;gap:10px;align-items:center"><div class="sb-player" style="background:#5e2d5e;color:#d48ad4">L</div><input class="form-input" type="text" placeholder="Objetivo personal de Lyra..." style="flex:1"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- NOTES -->
-          <div class="builder-panel" id="panel-notes">
-            <div class="form-section"><div class="form-label">NOTAS PRIVADAS DEL DM</div><textarea class="form-input" style="min-height:140px" placeholder="Recordatorios, giros posibles, música recomendada..."></textarea></div>
-            <div class="form-section"><div class="form-label">FRASES CLAVE PARA LA ESCENA</div><textarea class="form-input" placeholder="Líneas de diálogo, descripciones atmosféricas, momentos dramáticos..."></textarea></div>
-          </div>
-
-          <!-- DEBRIEF -->
-          <div class="builder-panel" id="panel-debrief">
-            <div style="padding:12px 16px;background:var(--red-light);border:2px solid var(--red);border-radius:var(--r);margin-bottom:16px;font-size:14px;color:var(--red)">El debrief se activa cuando marcas la escena como jugada.</div>
-            <div class="form-section"><div class="form-label">¿QUÉ PASÓ REALMENTE?</div><textarea class="form-input" style="min-height:120px" placeholder="Narra lo que sucedió en la mesa..."></textarea></div>
-            <div class="form-section"><div class="form-label">OBJETIVOS CUMPLIDOS</div>
-              <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--ink2)">
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green)"> Hablar con el alquimista</label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green)"> Conseguir el antídoto</label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green)"> No revelar que saben de la Marca</label>
-              </div>
-            </div>
-            <div class="form-section"><div class="form-label">CONSECUENCIAS — Flags para escenas futuras</div><textarea class="form-input" placeholder="¿Qué cambió? ¿Qué hicieron los jugadores que afecta lo que viene?"></textarea></div>
-            <div style="display:flex;gap:8px;margin-top:16px"><button class="btn btn-primary" style="flex:1;justify-content:center">Guardar debrief</button><button class="btn" style="flex:1;justify-content:center">Cerrar escena</button></div>
-          </div>
-        </div>
-
-        <!-- SIDE PANEL -->
-        <div class="builder-side">
-          <div class="form-label" style="margin-bottom:10px">NPCs DISPONIBLES</div>
-          <div class="npc-card" style="cursor:pointer"><div class="npc-name">Gruk el Alquimista</div><div class="npc-role">Goblin · Comerciante</div><div class="npc-voice">"Gruk sabe cosas..."</div></div>
-          <div class="npc-card" style="cursor:pointer"><div class="npc-name">Alcalde Brenn</div><div class="npc-role">Humano · Autoridad local</div></div>
-          <div class="form-label" style="margin-top:16px;margin-bottom:10px">VILLANOS ACTIVOS</div>
-          <div class="villain-card-lib" style="cursor:pointer"><div class="villain-label">VILLANO ACTIVO</div><div class="npc-name" style="font-size:15px;font-weight:700;font-family:var(--serif)">Malachar, el Tejedor</div><div class="npc-detail" style="font-size:13px;color:var(--ink2);margin-top:4px">Move: Envió espías al pueblo</div></div>
-          <div class="form-label" style="margin-top:16px;margin-bottom:10px">BESTIARIO RÁPIDO</div>
-          <div class="creature-card" style="cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><span class="creature-name" style="font-size:13px">Sombra de la Marca</span><span class="difficulty-tag diff-medium">Medio</span></div><div class="creature-stats-row" style="margin-top:4px"><span class="creature-stat hp" style="font-size:11px">HP 15</span><span class="creature-stat dmg" style="font-size:11px">4–8</span></div></div>
-          <div class="creature-card" style="cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><span class="creature-name" style="font-size:13px">Araña del Velo</span><span class="difficulty-tag diff-easy">Fácil</span></div><div class="creature-stats-row" style="margin-top:4px"><span class="creature-stat hp" style="font-size:11px">HP 8</span><span class="creature-stat dmg" style="font-size:11px">2–5</span></div></div>
-          <div class="creature-card" style="cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><span class="creature-name" style="font-size:13px">Golem de Runas</span><span class="difficulty-tag diff-hard">Duro</span></div><div class="creature-stats-row" style="margin-top:4px"><span class="creature-stat hp" style="font-size:11px">HP 40</span><span class="creature-stat dmg" style="font-size:11px">8–14</span></div></div>
-          <button class="btn" style="width:100%;justify-content:center;margin-top:8px">Ver bestiario completo</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════════ LIBRARY ════════ -->
-    <div class="view" id="view-library">
-      <div class="section-label">BIBLIOTECA</div>
-      <div class="lib-category-tabs">
-        <div class="lib-cat-tab active" onclick="switchLibCategory(this,'npcs')">NPCs <span class="tab-count">4</span></div>
-        <div class="lib-cat-tab" onclick="switchLibCategory(this,'villains')">Villanos <span class="tab-count">2</span></div>
-        <div class="lib-cat-tab" onclick="switchLibCategory(this,'bestiary')">Bestiario <span class="tab-count">5</span></div>
-        <div class="lib-cat-tab" onclick="switchLibCategory(this,'loot')">Loot <span class="tab-count">4</span></div>
-      </div>
-
-      <!-- NPCs -->
-      <div class="lib-content active" id="lib-npcs">
-        <div style="margin-bottom:12px"><button class="btn btn-primary">+ Nuevo NPC</button></div>
-        <div class="library-layout">
-          <div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar por nombre o rol..."></div><div class="library-item active"><div class="li-name">Gruk el Alquimista</div><div class="li-role">Goblin · Comerciante</div></div><div class="library-item"><div class="li-name">Alcalde Brenn</div><div class="li-role">Humano · Autoridad</div></div><div class="library-item"><div class="li-name">Spy Lysa</div><div class="li-role">Elfa · Informante · Casa Vorin</div></div><div class="library-item"><div class="li-name">Hermana Kaelen</div><div class="li-role">Humana · Orden Escarlata</div></div></div>
-          <div class="library-detail"><div class="detail-header"><div class="detail-name">Gruk el Alquimista</div><div class="detail-role">Goblin · Comerciante · Neutral caótico</div></div><div class="detail-section"><div class="detail-section-label">MOTIVACIÓN</div><div class="detail-section-value">Sobrevivir y acumular secretos. Gruk colecciona información como otros coleccionan monedas.</div></div><div class="detail-section"><div class="detail-section-label">LO QUE SABE</div><div class="detail-section-value">La marca es el símbolo de la Orden Negra. Vio al capitán Vex reunirse con alguien encapuchado en el molino.</div></div><div class="detail-section"><div class="detail-section-label">LO QUE QUIERE</div><div class="detail-section-value">Protección del gremio de ladrones. Dispuesto a intercambiar información por seguridad.</div></div><div class="detail-voice">"Gruk sabe cosas, sí sí... pero Gruk no regala. Todo tiene precio. ¿Qué ofreces tú?"</div><div class="detail-section" style="margin-top:16px"><div class="detail-section-label">APARECE EN</div><span class="scene-badge badge-sporadic" style="cursor:pointer">Tienda del alquimista</span></div></div>
-        </div>
-      </div>
-
-      <!-- Villains -->
-      <div class="lib-content" id="lib-villains">
-        <div style="margin-bottom:12px"><button class="btn" style="border-color:var(--red);color:var(--red)">+ Nuevo Villano</button></div>
-        <div class="library-layout">
-          <div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar villano..."></div><div class="library-item active"><div class="li-status"><span class="villain-status vs-active" style="font-size:10px">Activo</span></div><div class="li-name" style="color:var(--red)">Malachar, el Tejedor</div><div class="li-role">Humano · Villano principal</div></div><div class="library-item"><div class="li-status"><span class="villain-status vs-prepared" style="font-size:10px">Preparado</span></div><div class="li-name" style="color:var(--red)">Capitán Vex</div><div class="li-role">Humano · Agente</div></div></div>
-          <div class="library-detail"><div style="border-left:5px solid var(--red);padding-left:16px"><div class="detail-header"><div style="display:flex;align-items:center;gap:10px"><div class="detail-name">Malachar, el Tejedor</div><span class="villain-status vs-active">Activo</span></div><div class="detail-role">Humano · Líder de la Orden Negra · Plano 4</div></div></div><div class="detail-section"><div class="detail-section-label">MOTIVACIÓN</div><div class="detail-section-value">Restaurar la Orden Negra. Cree que el Rompimiento fue una oportunidad.</div></div><div class="detail-section"><div class="detail-section-label">ARCO NARRATIVO</div><div class="detail-section-value">Fase 1: Infiltración (activa). Fase 2: Provocación. Fase 3: El Ritual.</div></div><div class="detail-section"><div class="detail-section-label">STATS DE COMBATE</div><div class="creature-stats-row"><span class="creature-stat hp">HP 45</span><span class="creature-stat dmg">Daño 8–14</span><span class="creature-stat special">Magia de sombra</span></div></div><div class="detail-section"><div class="detail-section-label">MOVES ENTRE SESIONES</div><div class="detail-section-value"><span style="text-decoration:line-through;color:var(--ink4)">✓ Enviar al Capitán Vex a infiltrar el pueblo</span><br>▶ Enviar espías tras el grupo<br>○ Activar la célula dormida en la capital</div></div></div>
-        </div>
-      </div>
-
-      <!-- Bestiary -->
-      <div class="lib-content" id="lib-bestiary">
-        <div style="margin-bottom:12px"><button class="btn btn-primary">+ Nueva criatura</button></div>
-        <div class="library-layout">
-          <div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar criatura..."></div><div class="library-item active"><div class="li-name">Sombra de la Marca</div><div class="li-role">No-muerto · <span class="difficulty-tag diff-medium">Medio</span></div></div><div class="library-item"><div class="li-name">Araña del Velo</div><div class="li-role">Bestia · <span class="difficulty-tag diff-easy">Fácil</span></div></div><div class="library-item"><div class="li-name">Golem de Runas</div><div class="li-role">Constructo · <span class="difficulty-tag diff-hard">Duro</span></div></div><div class="library-item"><div class="li-name">Lobo Espectral</div><div class="li-role">No-muerto · <span class="difficulty-tag diff-easy">Fácil</span></div></div><div class="library-item"><div class="li-name">El Heraldo</div><div class="li-role">Elemental · <span class="difficulty-tag diff-boss">Jefe</span></div></div></div>
-          <div class="library-detail"><div class="detail-header"><div style="display:flex;align-items:center;gap:10px"><div class="detail-name">Sombra de la Marca</div><span class="difficulty-tag diff-medium">Medio</span></div><div class="detail-role">No-muerto · Soldado corrupto por la Orden Negra</div></div><div class="detail-section"><div class="detail-section-label">DESCRIPCIÓN NARRATIVA</div><div class="detail-section-value">Una silueta humanoide envuelta en humo negro. Los ojos son dos puntos de luz violeta. No habla — gruñe.</div></div><div class="detail-section"><div class="detail-section-label">STATS DE COMBATE</div><div class="creature-stats-row"><span class="creature-stat hp">HP 15</span><span class="creature-stat dmg">Daño 4–8</span><span class="creature-stat special">Toque corrupto</span><span class="creature-stat">Resist: Físico</span></div></div><div class="detail-section"><div class="detail-section-label">HABILIDADES</div><div class="detail-section-value"><strong>Toque corrupto:</strong> Al golpear, -1 Aen adicional.<br><strong>Reformar:</strong> Sin daño de fuego/luz, reaparece en 2 turnos con HP/2.</div></div><div class="detail-section"><div class="detail-section-label">TERRENO</div><span class="creature-terrain">🌲 Bosque</span><span class="creature-terrain">🏚️ Ruinas</span><span class="creature-terrain">🌙 Nocturno</span></div><div class="detail-section"><div class="detail-section-label">LAIR ACTIONS SUGERIDAS</div><div class="detail-section-value" style="color:var(--orange);font-style:italic">Niebla oscura se espesa · Sombra emerge de cadáver · Suelo con escarcha negra</div></div></div>
-        </div>
-      </div>
-
-      <!-- Loot -->
-      <div class="lib-content" id="lib-loot">
-        <div style="margin-bottom:12px"><button class="btn btn-primary">+ Nuevo item</button></div>
-        <div class="library-layout">
-          <div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar item..."></div><div class="library-item active"><div class="li-status"><span class="loot-rarity rarity-rare" style="font-size:10px;float:none">Raro</span></div><div class="li-name">Daga del Silencio</div><div class="li-role">Arma · Sin entregar</div></div><div class="library-item"><div class="li-status"><span class="loot-rarity rarity-legendary" style="font-size:10px;float:none">Legendario</span></div><div class="li-name">El Mapa de la Marca</div><div class="li-role">Narrativo · Entregado ✓</div></div><div class="library-item"><div class="li-status"><span class="loot-rarity rarity-uncommon" style="font-size:10px;float:none">Poco común</span></div><div class="li-name">Antídoto de Gruk</div><div class="li-role">Consumible · Sin entregar</div></div><div class="library-item"><div class="li-status"><span class="loot-rarity rarity-common" style="font-size:10px;float:none">Común</span></div><div class="li-name">Carta del Herrero</div><div class="li-role">Información · Entregado ✓</div></div></div>
-          <div class="library-detail"><div class="detail-header"><div style="display:flex;align-items:center;gap:10px"><div class="detail-name">Daga del Silencio</div><span class="loot-rarity rarity-rare">Raro</span></div><div class="detail-role">Arma · Cuerpo a cuerpo</div></div><div class="detail-section"><div class="detail-section-label">DESCRIPCIÓN</div><div class="detail-section-value">Una daga de hoja negra mate que no refleja luz. El mango está envuelto en cuero de serpiente del Velo. No hace sonido al cortar.</div></div><div class="detail-section"><div class="detail-section-label">EFECTO</div><div class="loot-effect" style="font-size:14px;color:var(--gold);font-style:italic;padding:10px 14px;background:var(--gold-pale);border-radius:var(--r)">+2 daño desde sigilo. 1/encuentro: primer ataque no rompe invisibilidad.</div></div><div class="detail-section"><div class="detail-section-label">SE ENTREGA EN</div><span class="loot-scene-link">Las ruinas bajo el molino — cofre tras el altar</span></div><div class="detail-section"><div class="detail-section-label">PARA</div><div style="display:flex;gap:8px;align-items:center"><div class="sb-player" style="background:#5e2d5e;color:#d48ad4">L</div><span style="font-size:14px;color:var(--ink2)">Lyra — conecta con su backstory</span></div></div><div class="detail-section"><div class="detail-section-label">ESTADO</div><div style="display:flex;gap:10px;align-items:center"><span style="font-size:14px;color:var(--ink3)">Sin entregar</span><button class="btn">Marcar como entregado</button></div></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ════════ PLAYERS ════════ -->
-    <div class="view" id="view-players">
-      <div class="section-label">PERSONAJES JUGADORES</div>
-      <div class="player-grid">
-        <div class="player-card" style="border-color:#4a6aaa"><div class="player-card-header"><div class="player-avatar" style="background:#2d3a5e;color:#8aa4d4">E</div><div><div class="player-card-name">Eneas</div><div class="player-card-class">Caballero · Plano 3</div></div></div><div class="player-meta"><span class="player-tag faction">Casa Vorin</span><span class="player-tag">Fuerza</span><span class="player-tag">Vía del Coraje</span></div><div class="player-objective"><div class="player-objective-label">OBJETIVO PERSONAL — SESIÓN 3</div>Descubrir qué sabe el alquimista sobre el paradero de su padre, desaparecido en una ruta comercial de Casa Vorin.</div><div class="echo-tracker"><div class="echo-tracker-label">ECHO POINTS</div><div class="echo-dots"><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div></div></div></div>
-        <div class="player-card" style="border-color:#aa4a4a"><div class="player-card-header"><div class="player-avatar" style="background:#5e2d2d;color:#d48a8a">V</div><div><div class="player-card-name">Valeska</div><div class="player-card-class">Guardián · Plano 2</div></div></div><div class="player-meta"><span class="player-tag faction">Orden Escarlata</span><span class="player-tag">Fuerza</span><span class="player-tag">Vía de la Empatía</span></div><div class="player-objective"><div class="player-objective-label">OBJETIVO PERSONAL — SESIÓN 3</div>Encontrar pistas sobre la hermandad destruida. Alguien en el pueblo vio algo esa noche.</div><div class="echo-tracker"><div class="echo-tracker-label">ECHO POINTS</div><div class="echo-dots"><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div></div></div></div>
-        <div class="player-card" style="border-color:#4aaa5a"><div class="player-card-header"><div class="player-avatar" style="background:#2d5e3a;color:#8ad48a">A</div><div><div class="player-card-name">Arken</div><div class="player-card-class">Mago · Plano 2</div></div></div><div class="player-meta"><span class="player-tag faction">Casa Cherán</span><span class="player-tag">Magia</span><span class="player-tag">Vía de la Sabiduría</span></div><div class="player-objective"><div class="player-objective-label">OBJETIVO PERSONAL — SESIÓN 3</div>Investigar las runas inestables del molino. Puede que estén conectadas con el Rompimiento.</div><div class="echo-tracker"><div class="echo-tracker-label">ECHO POINTS</div><div class="echo-dots"><div class="echo-dot filled">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div></div></div></div>
-        <div class="player-card" style="border-color:#aa4aaa"><div class="player-card-header"><div class="player-avatar" style="background:#5e2d5e;color:#d48ad4">L</div><div><div class="player-card-name">Lyra</div><div class="player-card-class">Pícara · Plano 3</div></div></div><div class="player-meta"><span class="player-tag faction">Pueblos sin Techo</span><span class="player-tag">Fuerza</span><span class="player-tag">Vía del Sacrificio</span></div><div class="player-objective"><div class="player-objective-label">OBJETIVO PERSONAL — SESIÓN 3</div>Proteger al grupo de jóvenes refugiados fuera del pueblo. Alguien los está siguiendo.</div><div class="echo-tracker"><div class="echo-tracker-label">ECHO POINTS</div><div class="echo-dots"><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot">✦</div></div></div></div>
-      </div>
-    </div>
-
-    <!-- ════════ SESSION ════════ -->
-    <div class="view" id="view-session">
-      <div id="session-content"></div>
-    </div>
-
-    <!-- ════════ SETTINGS ════════ -->
-    <div class="view" id="view-settings">
-      <div class="section-label">CONFIGURACIÓN</div>
-
-      <!-- Game Data Info -->
-      <div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px">
-        <div class="form-label">GAME DATA CARGADA</div>
-        <div id="gamedata-info" style="font-size:14px;color:var(--ink2);line-height:1.8"></div>
-      </div>
-
-      <!-- Export -->
-      <div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px">
-        <div class="form-label">EXPORTAR DATOS (descargar JSON)</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
-          <button class="btn" onclick="exportDB('campaign')">Campaña</button>
-          <button class="btn" onclick="exportDB('sessions')">Sesiones</button>
-          <button class="btn" onclick="exportDB('scenes')">Escenas</button>
-          <button class="btn" onclick="exportDB('npcs')">NPCs</button>
-          <button class="btn" onclick="exportDB('villains')">Villanos</button>
-          <button class="btn" onclick="exportDB('bestiary')">Bestiario</button>
-          <button class="btn" onclick="exportDB('loot')">Loot</button>
-          <button class="btn" onclick="exportDB('players')">Jugadores</button>
-          <button class="btn btn-primary" onclick="exportAll()">Exportar TODO</button>
-        </div>
-      </div>
-
-      <!-- Import -->
-      <div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px">
-        <div class="form-label">IMPORTAR DATOS (cargar JSON)</div>
-        <div style="margin-top:8px">
-          <input type="file" id="import-file" accept=".json" style="font-size:14px" onchange="importDB(this)">
-        </div>
-        <div id="import-status" style="margin-top:8px;font-size:13px;color:var(--ink3)"></div>
-      </div>
-
-      <!-- Reset -->
-      <div style="background:var(--surface);border:2px solid var(--red);border-radius:var(--r-lg);padding:18px">
-        <div class="form-label" style="color:var(--red)">ZONA DE PELIGRO</div>
-        <button class="btn" style="border-color:var(--red);color:var(--red);margin-top:8px" onclick="if(confirm('¿Borrar TODOS los datos y resetear a valores iniciales? Esto no se puede deshacer.')){resetAllData()}">Resetear todos los datos</button>
-      </div>
-    </div>
-
+    <div class="view active" id="view-campaign"><div id="campaign-content"></div></div>
+    <div class="view" id="view-scenes"><div id="scenes-content"></div></div>
+    <div class="view" id="view-library"><div id="library-content"></div></div>
+    <div class="view" id="view-players"><div id="players-content"></div></div>
+    <div class="view" id="view-session"><div id="session-content"></div></div>
+    <div class="view" id="view-settings"><div id="settings-content"></div></div>
   </div>
 </div>
+<div id="modal-root"></div>
 
 <script src="gamedata.js"></script>
 <script>
 /* ══════════════════════════════════════════════
-   DATABASE LAYER — localStorage CRUD
+   DB LAYER
    ══════════════════════════════════════════════ */
-var DB_PREFIX = 'eqsm_';
-var DB_TABLES = ['campaign','sessions','scenes','npcs','villains','bestiary','loot','players'];
+var DB_PREFIX='eqsm_';
+var DB_TABLES=['campaign','sessions','scenes','npcs','villains','bestiary','loot','players'];
+function dbKey(t){return DB_PREFIX+t}
+function dbLoad(t){try{var d=localStorage.getItem(dbKey(t));return d?JSON.parse(d):null}catch(e){return null}}
+function dbSave(t,d){try{localStorage.setItem(dbKey(t),JSON.stringify(d));return true}catch(e){return false}}
+function dbGetAll(t){return dbLoad(t)||[]}
+function dbGetById(t,id){return dbGetAll(t).find(function(i){return i.id===id})||null}
+function dbCreate(t,item){var items=dbGetAll(t);if(!item.id)item.id=t.substring(0,3)+'-'+Date.now().toString(36);items.push(item);dbSave(t,items);return item}
+function dbUpdate(t,id,updates){var items=dbGetAll(t);var idx=items.findIndex(function(i){return i.id===id});if(idx===-1)return;Object.keys(updates).forEach(function(k){items[idx][k]=updates[k]});dbSave(t,items);return items[idx]}
+function dbDelete(t,id){dbSave(t,dbGetAll(t).filter(function(i){return i.id!==id}))}
+function dbSaveSingle(t,d){localStorage.setItem(dbKey(t),JSON.stringify(d))}
+function dbLoadSingle(t){try{var d=localStorage.getItem(dbKey(t));return d?JSON.parse(d):null}catch(e){return null}}
 
-function dbKey(table){ return DB_PREFIX + table; }
-
-function dbLoad(table){
-  try{ var d=localStorage.getItem(dbKey(table)); return d?JSON.parse(d):null; }
-  catch(e){ console.error('DB load error:',table,e); return null; }
+function seedIfEmpty(){
+  if(dbLoad('_initialized'))return;
+  DB_TABLES.forEach(function(t){if(!dbLoad(t))dbSave(t,t==='campaign'?null:[])});
+  dbSave('_initialized',true);
 }
+seedIfEmpty();
 
-function dbSave(table, data){
-  try{ localStorage.setItem(dbKey(table), JSON.stringify(data)); return true; }
-  catch(e){ console.error('DB save error:',table,e); return false; }
-}
+/* ══════════════════════════════════════════════
+   STATE
+   ══════════════════════════════════════════════ */
+var currentView='campaign';
+var selectedLibTab='npcs';
+var selectedLibItem=null;
+var selectedSceneId=null;
+var selectedBeatIdx=0;
+var combat=null;
+var expandedUnits={};
+var dragSrc=null;
+var modalStack=[];
 
-function dbGetAll(table){ return dbLoad(table) || []; }
-
-function dbGetById(table, id){
-  var items = dbGetAll(table);
-  return items.find(function(i){ return i.id === id; }) || null;
-}
-
-function dbCreate(table, item){
-  var items = dbGetAll(table);
-  if(!item.id) item.id = table.substring(0,3) + '-' + Date.now().toString(36);
-  item.createdAt = new Date().toISOString();
-  items.push(item);
-  dbSave(table, items);
-  return item;
-}
-
-function dbUpdate(table, id, updates){
-  var items = dbGetAll(table);
-  var idx = items.findIndex(function(i){ return i.id === id; });
-  if(idx === -1) return null;
-  Object.keys(updates).forEach(function(k){ items[idx][k] = updates[k]; });
-  items[idx].updatedAt = new Date().toISOString();
-  dbSave(table, items);
-  return items[idx];
-}
-
-function dbDelete(table, id){
-  var items = dbGetAll(table);
-  items = items.filter(function(i){ return i.id !== id; });
-  dbSave(table, items);
-}
-
-/* ── SEED DATA ── */
-function seedDatabase(){
-  // Only seed if no data exists
-  if(dbLoad('players')) return;
-
-  dbSave('players', [
-    {id:'p1',name:'Eneas',initial:'E',classId:'knight',subclassId:'protector',kitId:'bastion',plano:3,factionId:'vorin',featChosen:0,bg:'#2d3a5e',fg:'#8aa4d4',echo:2,backstory:'Hijo de un comerciante de Casa Vorin desaparecido en una ruta comercial.'},
-    {id:'p2',name:'Valeska',initial:'V',classId:'knight',subclassId:'martyr',kitId:'juramento',plano:2,factionId:'escarlata',featChosen:0,bg:'#5e2d2d',fg:'#d48a8a',echo:3,backstory:'Miembro de una hermandad destruida. Busca respuestas.'},
-    {id:'p3',name:'Arken',initial:'A',classId:'wizard',subclassId:'elementalist',kitId:'conducto',plano:2,factionId:'cheran',featChosen:2,bg:'#2d5e3a',fg:'#8ad48a',echo:1,backstory:'Estudioso de las runas inestables post-Rompimiento.'},
-    {id:'p4',name:'Lyra',initial:'L',classId:'shadow',subclassId:'phantom',kitId:'dagas',plano:3,factionId:'pueblos',featChosen:1,bg:'#5e2d5e',fg:'#d48ad4',echo:4,backstory:'Protectora de jóvenes refugiados. Alguien los sigue.'}
-  ]);
-
-  dbSave('npcs', [
-    {id:'npc-001',name:'Gruk el Alquimista',role:'Comerciante',race:'Goblin',alignment:'Neutral caótico',motivation:'Sobrevivir y acumular secretos',knows:'La marca es de la Orden Negra. Vio a Vex en el molino.',wants:'Protección del gremio de ladrones',voice:'Gruk sabe cosas, sí sí... pero Gruk no regala.',appearsIn:['scene-003'],tags:['comerciante','informante']},
-    {id:'npc-002',name:'Alcalde Brenn',role:'Autoridad local',race:'Humano',alignment:'Legal neutral',motivation:'Proteger su pueblo a cualquier costo',knows:'La marca apareció hace 3 lunas. Algo viene del molino.',wants:'Que alguien resuelva el problema sin llamar la atención',voice:'Este pueblo no sobrevive otro invierno así.',appearsIn:['scene-002'],tags:['autoridad','aliado']},
-    {id:'npc-003',name:'Spy Lysa',role:'Informante',race:'Elfa',alignment:'Neutral',motivation:'Servir a Casa Vorin recopilando información',knows:'La ruta comercial donde desapareció el padre de Eneas',wants:'Información sobre la Orden Negra para Vorin',voice:'No me busques. Yo te encuentro cuando tenga algo.',appearsIn:['scene-002'],tags:['espía','Casa Vorin']},
-    {id:'npc-004',name:'Hermana Kaelen',role:'Sanadora',race:'Humana',alignment:'Legal bueno',motivation:'Sanar y proteger según el Juramento Escarlata',knows:'Algo destruyó la hermandad de Valeska',wants:'Encontrar sobrevivientes de la hermandad',voice:'El Juramento no distingue entre amigos y desconocidos.',appearsIn:[],tags:['Orden Escarlata','sanadora']}
-  ]);
-
-  dbSave('villains', [
-    {id:'vill-001',name:'Malachar, el Tejedor',role:'Líder de la Orden Negra',status:'active',motivation:'Restaurar la Orden Negra',arc:'Fase 1: Infiltración. Fase 2: Provocación. Fase 3: El Ritual.',stats:{hp:45,dmg:'8-14',special:'Magia de sombra',resist:'Control mental'},abilities:[{name:'Tejo de Sombras',type:'Acción',desc:'Ataque a distancia 8-14.'},{name:'Dominar Voluntad',type:'Acción',desc:'Controla a un objetivo 1 ronda. DC 18.'},{name:'Manto de Oscuridad',type:'Reacción',desc:'Inmune a daño 1 turno. 1/encuentro.'}],moves:[{text:'Enviar al Capitán Vex a infiltrar el pueblo',done:true},{text:'Enviar espías tras el grupo',done:false},{text:'Activar la célula dormida en la capital',done:false}],appearsIn:['scene-001']},
-    {id:'vill-002',name:'Capitán Vex',role:'Agente de Malachar',status:'prepared',motivation:'Servir a Malachar por deuda de sangre',arc:'Infiltración → Emboscada → Huida → Regreso.',stats:{hp:30,dmg:'6-12',special:'Grito de mando',resist:'Miedo'},abilities:[{name:'Espada de Sombra',type:'Acción',desc:'6-12 daño. Crítico: cega 1 turno.'},{name:'Grito de Mando',type:'Acción',desc:'Aliados en radio 4 hacen ataque libre.'}],moves:[{text:'Infiltrar el pueblo disfrazado de mercader',done:true},{text:'Emboscar al grupo en el puente',done:true}],appearsIn:['scene-001']}
-  ]);
-
-  dbSave('bestiary', [
-    {id:'crea-001',name:'Sombra de la Marca',type:'No-muerto',difficulty:'medium',hp:15,dmg:'4-8',resist:'Físico',terrain:['Bosque','Ruinas','Nocturno'],abilities:[{name:'Zarpazo Sombrío',type:'Acción',desc:'Cuerpo a cuerpo 4-8.'},{name:'Toque Corrupto',type:'Acción',desc:'Al golpear, -1 Aen adicional.'},{name:'Reformar',type:'Pasiva',desc:'Sin fuego/luz, reaparece en 2 turnos con HP/2.'}],lairSuggestions:['Niebla oscura','Sombra emerge de cadáver'],description:'Silueta humanoide en humo negro. Ojos violeta. Gruñe.',appearsIn:['scene-001']},
-    {id:'crea-002',name:'Araña del Velo',type:'Bestia',difficulty:'easy',hp:8,dmg:'2-5',resist:'Ninguno',terrain:['Cueva','Ruinas'],abilities:[{name:'Mordisco Venenoso',type:'Acción',desc:'2-5 daño. Envenenado 1 turno.'},{name:'Telaraña',type:'Acción',desc:'Inmoviliza 1 turno. Alcance 3.'}],lairSuggestions:['Telarañas bloquean caminos'],description:'Araña del tamaño de un perro. Patas translúcidas.',appearsIn:[]},
-    {id:'crea-003',name:'Golem de Runas',type:'Constructo',difficulty:'hard',hp:40,dmg:'8-14',resist:'Magia',terrain:['Ruinas','Templo'],abilities:[{name:'Puño de Piedra',type:'Acción',desc:'8-14 daño. Derriba.'},{name:'Absorber Aen',type:'Pasiva',desc:'Inmune a habilidades mágicas. Absorbe Aen gastado contra él.'},{name:'Explosión Rúnica',type:'Acción',desc:'Al morir, explota radio 2 por 10 daño.'}],lairSuggestions:['Runas en el suelo brillan — terreno difícil'],description:'Figura humanoide de piedra con runas brillantes. Silencioso.',appearsIn:[]},
-    {id:'crea-004',name:'Lobo Espectral',type:'No-muerto',difficulty:'easy',hp:10,dmg:'3-6',resist:'Físico',terrain:['Bosque','Nocturno'],abilities:[{name:'Mordisco Fantasmal',type:'Acción',desc:'3-6 daño. Ignora armadura.'},{name:'Aullido',type:'Acción',desc:'Todos en radio 3: Asustado 1 turno.'}],lairSuggestions:['Aullidos lejanos — moral baja'],description:'Lobo translúcido con ojos azules. Se mueve sin sonido.',appearsIn:[]},
-    {id:'crea-005',name:'El Heraldo',type:'Elemental',difficulty:'boss',hp:80,dmg:'12-20',resist:'Físico, Fuego',terrain:['Cualquiera'],abilities:[{name:'Descarga Planar',type:'Acción',desc:'12-20 daño radio 3. Todos derribados.'},{name:'Fisura',type:'Acción',desc:'Abre grieta en el suelo. Terreno difícil permanente.'},{name:'Escudo de Planos',type:'Pasiva',desc:'Reduce todo daño en 5. Inmune a condiciones.'},{name:'Invocar Fragmentos',type:'Acción',desc:'Invoca 2 Sombras de la Marca.'}],lairSuggestions:['La realidad se distorsiona','El cielo cambia de color','Grietas en el suelo emiten luz'],description:'Figura de luz y sombra. Cambia de forma constantemente. No tiene rostro.',appearsIn:[]}
-  ]);
-
-  dbSave('loot', [
-    {id:'loot-001',name:'Daga del Silencio',type:'Arma',rarity:'rare',description:'Hoja negra mate. No refleja luz. No hace sonido.',effect:'+2 daño desde sigilo. 1/encuentro: no rompe invisibilidad.',deliveredInScene:null,intendedFor:'p4',plannedScene:'scene-004',delivered:false},
-    {id:'loot-002',name:'El Mapa de la Marca',type:'Narrativo',rarity:'legendary',description:'Mapa antiguo con marcas que brillan bajo la luna.',effect:'Revela la ubicación de 3 células de la Orden Negra.',deliveredInScene:'scene-002',intendedFor:null,plannedScene:'scene-002',delivered:true},
-    {id:'loot-003',name:'Antídoto de Gruk',type:'Consumible',rarity:'uncommon',description:'Frasco burbujeante con líquido verde.',effect:'Cura veneno de sombra. Uso único. Puede salvar al Alcalde.',deliveredInScene:null,intendedFor:null,plannedScene:'scene-003',delivered:false},
-    {id:'loot-004',name:'Carta del Herrero',type:'Información',rarity:'common',description:'Carta sellada con cera negra.',effect:'Revela que el herrero era informante de la Orden Negra.',deliveredInScene:'scene-001',intendedFor:null,plannedScene:'scene-001',delivered:true}
-  ]);
-
-  dbSave('campaign', {id:'camp-001',name:'La Marca Oscura',currentArc:'arc-001',currentSession:'sess-003',
-    arcs:[{id:'arc-001',name:'La Sombra Crece',order:1,beats:[
-      {id:'beat-001',name:'La llamada a la aventura',order:1,sessions:['sess-001','sess-002']},
-      {id:'beat-002',name:'El primer encuentro',order:2,sessions:['sess-003']},
-      {id:'beat-003',name:'La traición',order:3,sessions:[]},
-      {id:'beat-004',name:'El clímax',order:4,sessions:[]}
-    ]}]
-  });
-
-  dbSave('sessions', [
-    {id:'sess-003',name:'Sesión 3',arcId:'arc-001',beatId:'beat-002',date:'2026-06-15',scenes:['scene-001','scene-002','scene-003','scene-004'],status:'in-progress'}
-  ]);
-
-  dbSave('scenes', [
-    {id:'scene-001',name:'Emboscada en el puente',type:'combat',status:'debriefed',sporadic:false,
-     setup:{hook:'Los árboles se silencian de golpe',conflict:'4 Sombras + 1 Capitán de la Marca',stakesFail:'Pierden al prisionero',stakesWin:'Capturan al capitán',exit:'El capitán escapa: Él ya sabe dónde están...'},
-     participants:{npcIds:[],creatureIds:[{creatureId:'crea-001',qty:4},{creatureId:'crea-005',qty:1}]},
-     lairActions:['La niebla se espesa','El puente cruje'],
-     objectives:{session:'Descubrir qué hay bajo el molino',scene:['Sobrevivir la emboscada','Capturar al capitán vivo'],personal:{p1:'Reconocer el símbolo',p2:'',p3:'Detectar magia de sombra',p4:'Proteger la retaguardia'}},
-     loot:[{lootId:'loot-004',condition:'Registrar al capitán'}],
-     notes:'Música: Batalla Épica.',debrief:{whatHappened:'El capitán escapó herido.',objectivesMet:[true,false],consequences:['El capitán sabe dónde están','Eneas reconoció el símbolo de Vorin']}},
-    {id:'scene-002',name:'El Consejo del Alcalde',type:'narrative',status:'debriefed',sporadic:false,
-     setup:{hook:'El salón huele a miedo',conflict:'El alcalde oculta algo',stakesFail:'No obtienen el mapa',stakesWin:'Alianza con Brenn + el mapa',exit:'Lysa aparece desde las sombras...'},
-     participants:{npcIds:['npc-002','npc-003'],creatureIds:[]},lairActions:[],
-     objectives:{session:'Descubrir qué hay bajo el molino',scene:['Hablar con el alcalde','Obtener el mapa'],personal:{p1:'Info de Casa Vorin sobre su padre',p2:'Preguntar por la hermandad',p3:'',p4:''}},
-     loot:[{lootId:'loot-002',condition:'Convencer al alcalde'}],
-     notes:'',debrief:{whatHappened:'Brenn reveló el mapa. Lysa contactó a Eneas.',objectivesMet:[true,true],consequences:['Eneas tiene pista de su padre','Brenn confía en el grupo']}},
-    {id:'scene-003',name:'La tienda del alquimista',type:'narrative',status:'active',sporadic:true,
-     setup:{hook:'Huele a azufre y hierbas',conflict:'El precio de Gruk no es oro, es información',stakesFail:'Gruk alerta al gremio',stakesWin:'Antídoto + aliado inesperado',exit:'Gruk susurra: Díganle al alcalde que sé lo de la marca...'},
-     participants:{npcIds:['npc-001'],creatureIds:[]},lairActions:[],
-     objectives:{session:'',scene:['Conseguir el antídoto','No revelar que saben de la Marca'],personal:{p1:'',p2:'',p3:'',p4:''}},
-     loot:[{lootId:'loot-003',condition:'Si triunfan'}],notes:'',debrief:null},
-    {id:'scene-004',name:'Las ruinas bajo el molino',type:'combat',status:'ready',sporadic:false,
-     setup:{hook:'Ruidos bajo la tierra por la noche',conflict:'Golem de Runas custodia la entrada',stakesFail:'No pueden entrar al templo',stakesWin:'Descubren la entrada + Daga del Silencio',exit:'La puerta del templo se abre...'},
-     participants:{npcIds:[],creatureIds:[{creatureId:'crea-003',qty:1},{creatureId:'crea-002',qty:3}]},
-     lairActions:['Runas en el suelo brillan','El techo cruje'],
-     objectives:{session:'Descubrir qué hay bajo el molino',scene:['Derrotar al Golem','Encontrar la entrada'],personal:{p1:'',p2:'',p3:'Analizar las runas del Golem',p4:'Encontrar el cofre oculto'}},
-     loot:[{lootId:'loot-001',condition:'Cofre tras el altar'}],notes:'',debrief:null}
-  ]);
-
-  console.log('✅ Database seeded');
-}
-
-/* ── EXPORT / IMPORT ── */
-function exportDB(table){
-  var data = dbLoad(table);
-  if(!data){ alert('No hay datos para '+table); return; }
-  var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'epicquest_'+table+'.json';
-  a.click();
-}
-
-function exportAll(){
-  var all = {};
-  DB_TABLES.forEach(function(t){ all[t] = dbLoad(t); });
-  var blob = new Blob([JSON.stringify(all, null, 2)], {type:'application/json'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'epicquest_backup_'+new Date().toISOString().split('T')[0]+'.json';
-  a.click();
-}
-
-function importDB(input){
-  var file = input.files[0];
-  if(!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      var data = JSON.parse(e.target.result);
-      var status = document.getElementById('import-status');
-      // Check if it's a full backup (has multiple tables)
-      if(data.campaign || data.npcs || data.scenes){
-        var imported = [];
-        DB_TABLES.forEach(function(t){
-          if(data[t]){ dbSave(t, data[t]); imported.push(t); }
-        });
-        status.textContent = '✅ Importado: ' + imported.join(', ');
-        status.style.color = 'var(--green)';
-      }
-      // Or a single table (array)
-      else if(Array.isArray(data)){
-        var name = file.name.replace('epicquest_','').replace('.json','');
-        if(DB_TABLES.includes(name)){
-          dbSave(name, data);
-          status.textContent = '✅ Importado: ' + name + ' (' + data.length + ' items)';
-          status.style.color = 'var(--green)';
-        } else {
-          status.textContent = '⚠ No se pudo determinar la tabla. Nombre del archivo debe ser epicquest_[tabla].json';
-          status.style.color = 'var(--orange)';
-        }
-      }
-    } catch(err){
-      document.getElementById('import-status').textContent = '❌ Error: ' + err.message;
-      document.getElementById('import-status').style.color = 'var(--red)';
-    }
-    input.value = '';
-  };
-  reader.readAsText(file);
-}
-
-function resetAllData(){
-  DB_TABLES.forEach(function(t){ localStorage.removeItem(dbKey(t)); });
-  seedDatabase();
-  location.reload();
-}
-
-/* ── SETTINGS RENDER ── */
-function renderSettings(){
-  var info = document.getElementById('gamedata-info');
-  if(!info) return;
-  var lines = [];
-  if(typeof GAMEDATA !== 'undefined'){
-    lines.push('Clases: ' + GAMEDATA.classes.length + ' (' + GAMEDATA.classes.reduce(function(a,c){return a+c.subclasses.length},0) + ' subclases)');
-    lines.push('Facciones: ' + GAMEDATA.factions.length);
-    lines.push('Kits: ' + GAMEDATA.kits.length);
-    lines.push('Condiciones: ' + GAMEDATA.conditions.length);
-    lines.push('Planos: ' + GAMEDATA.planes.length);
-  } else {
-    lines.push('⚠ gamedata.js no encontrado. Colócalo junto a index.html.');
-  }
-  lines.push('');
-  DB_TABLES.forEach(function(t){
-    var d = dbLoad(t);
-    var count = Array.isArray(d) ? d.length : (d ? 1 : 0);
-    lines.push(t + ': ' + count + (Array.isArray(d) ? ' items' : ''));
-  });
-  info.innerHTML = lines.join('<br>');
-}
-
-/* ── HELPER: get player with resolved class/faction data ── */
+/* ══════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════ */
 function resolvePlayer(p){
-  var cls = typeof GAMEDATA!=='undefined' ? GAMEDATA.classes.find(function(c){return c.id===p.classId}) : null;
-  var sub = cls ? cls.subclasses.find(function(s){return s.id===p.subclassId}) : null;
-  var kit = typeof GAMEDATA!=='undefined' ? GAMEDATA.kits.find(function(k){return k.id===p.kitId}) : null;
-  var fac = typeof GAMEDATA!=='undefined' ? GAMEDATA.factions.find(function(f){return f.id===p.factionId}) : null;
-  var abilities = [];
-  if(cls) cls.abilities.forEach(function(a){abilities.push(a)});
-  if(sub) sub.abilities.forEach(function(a){abilities.push(a)});
-  if(kit) abilities.push({name:kit.ability.name,type:'Kit',desc:kit.ability.desc,cost:kit.ability.cost});
-  return {
-    id:p.id, name:p.name, initial:p.initial, bg:p.bg, fg:p.fg, echo:p.echo,
-    cls: cls ? cls.nameEs : p.classId,
-    sub: sub ? sub.name : '',
-    kit: kit ? kit.name : '',
-    plano: p.plano,
-    faction: fac ? fac.name : p.factionId,
-    hp: (typeof GAMEDATA!=='undefined' ? GAMEDATA.rules.hpBase : 10) + (kit ? kit.hpBonus : 0),
-    aenRegen: (typeof GAMEDATA!=='undefined' ? GAMEDATA.rules.aenPerTurn : 2) + (kit ? kit.aenBonus : 0),
-    abilities: abilities,
-    backstory: p.backstory || ''
-  };
+  if(!p)return null;
+  var G=typeof GAMEDATA!=='undefined'?GAMEDATA:null;
+  var cls=G?G.classes.find(function(c){return c.id===p.classId}):null;
+  var sub=cls?cls.subclasses.find(function(s){return s.id===p.subclassId}):null;
+  var kit=G?G.kits.find(function(k){return k.id===p.kitId}):null;
+  var fac=G?G.factions.find(function(f){return f.id===p.factionId}):null;
+  var ab=[];
+  if(cls)cls.abilities.forEach(function(a){ab.push(a)});
+  if(sub)sub.abilities.forEach(function(a){ab.push(a)});
+  if(kit)ab.push({name:kit.ability.name,type:'Kit',desc:kit.ability.desc,cost:kit.ability.cost});
+  return{id:p.id,name:p.name,initial:p.initial||p.name.charAt(0),bg:p.bg||'#444',fg:p.fg||'#fff',echo:p.echo||0,
+    cls:cls?cls.nameEs:(p.classId||''),sub:sub?sub.name:'',kit:kit?kit.name:'',plano:p.plano||1,
+    faction:fac?fac.name:(p.factionId||''),factionColor:fac?fac.color:'#666',
+    hp:(G?G.rules.hpBase:10)+(kit?kit.hpBonus:0),aenRegen:(G?G.rules.aenPerTurn:2)+(kit?kit.aenBonus:0),
+    abilities:ab,backstory:p.backstory||''}
 }
 
-/* ── INIT ── */
-seedDatabase();
+function getHpColor(pct){if(pct>60)return'var(--green)';if(pct>25)return'var(--orange)';return'var(--red)'}
+function diffLabel(d){return{easy:'Fácil',medium:'Medio',hard:'Duro',boss:'Jefe'}[d]||d}
+function rarityClass(r){return{common:'rarity-common',uncommon:'rarity-uncommon',rare:'rarity-rare',legendary:'rarity-legendary'}[r]||'rarity-common'}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,4)}
 
-/* STATE */
-var combat = null;
-var expandedUnits = {};
-var dragSrc = null;
+/* ══════════════════════════════════════════════
+   NAVIGATION
+   ══════════════════════════════════════════════ */
+var breadcrumbs={campaign:'📜 <span>Campaña</span>',scenes:'🎬 <span>Scene Builder</span>',library:'📖 <span>Biblioteca</span>',players:'👥 <span>Personajes</span>',session:'⚡ <span>Sesión en Vivo</span>',settings:'⚙️ <span>Configuración</span>'};
+function nav(id){
+  currentView=id;
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
+  var t=document.getElementById('view-'+id);if(t)t.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(function(i){i.classList.remove('active')});
+  var items=document.querySelectorAll('.sb-item');
+  var map={campaign:0,scenes:1,library:2,players:3,session:4};
+  if(map[id]!==undefined)items[map[id]].classList.add('active');
+  document.getElementById('breadcrumb').innerHTML=breadcrumbs[id]||'';
+  renderView(id);
+}
 
-// Players loaded from DB and resolved with gamedata
-var players = (dbGetAll('players')||[]).map(resolvePlayer);
+function renderView(id){
+  if(id==='campaign')renderCampaign();
+  if(id==='scenes')renderSceneBuilder(selectedSceneId);
+  if(id==='library')renderLibrary();
+  if(id==='players')renderPlayers();
+  if(id==='session')renderSession();
+  if(id==='settings')renderSettings();
+  renderSidebar();
+}
 
-// Build encounter from a scene in the DB
-function buildEncounterFromScene(sceneId){
-  var scene = dbGetById('scenes', sceneId);
-  if(!scene) return null;
-  var creatures = [];
-  if(scene.participants && scene.participants.creatureIds){
+function renderSidebar(){
+  var camp=dbLoadSingle('campaign');
+  var ci=document.getElementById('sb-campaign-info');
+  if(ci){
+    if(camp){ci.innerHTML='<div class="sb-campaign-label">CAMPAÑA ACTIVA</div><div class="sb-campaign-name">'+camp.name+'</div>'}
+    else{ci.innerHTML='<div class="sb-campaign-label">SIN CAMPAÑA</div>'}
+  }
+  var pb=document.getElementById('sb-players-bar');
+  if(pb){
+    var pls=dbGetAll('players');
+    if(pls.length===0){pb.innerHTML=''}
+    else{
+      var h='<div class="sb-players-label">EN MESA</div><div class="sb-player-list">';
+      pls.forEach(function(p){h+='<div class="sb-player" style="background:'+(p.bg||'#444')+';color:'+(p.fg||'#fff')+'" title="'+p.name+'">'+( p.initial||p.name.charAt(0))+'</div>'});
+      h+='</div>';pb.innerHTML=h;
+    }
+  }
+}
+
+/* ══════════════════════════════════════════════
+   RENDER: CAMPAIGN
+   ══════════════════════════════════════════════ */
+function renderCampaign(){
+  var el=document.getElementById('campaign-content');if(!el)return;
+  var camp=dbLoadSingle('campaign');
+  if(!camp){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay campaña activa</div><div class="empty-state-desc">Crea una campaña para empezar a planear tus sesiones y escenas.</div><button class="btn btn-primary" onclick="openModal(\'campaign\',null)">Crear campaña</button></div>';
+    return;
+  }
+  var h='<div class="section-label">'+camp.name+'</div>';
+  var arcs=camp.arcs||[];
+  var arc=arcs[0]||{beats:[]};
+  // Beats
+  h+='<div class="beats-row">';
+  (arc.beats||[]).forEach(function(b,i){
+    var cls='beat-card'+(i===selectedBeatIdx?' active':'');
+    h+='<div class="'+cls+'" onclick="selectedBeatIdx='+i+';renderCampaign()">';
+    h+='<div class="beat-num">BEAT '+(i+1)+'</div><div class="beat-name">'+b.name+'</div></div>';
+    if(i<arc.beats.length-1)h+='<div class="beat-connector">—</div>';
+  });
+  h+='<div style="flex-shrink:0;display:flex;align-items:center"><button class="btn" onclick="addBeat()">+</button></div>';
+  h+='</div>';
+  // Scenes for selected beat
+  var scenes=dbGetAll('scenes');
+  var beat=arc.beats[selectedBeatIdx];
+  var beatScenes=beat?scenes.filter(function(s){return(beat.scenes||[]).indexOf(s.id)>-1}):[];
+  // Also show unassigned scenes
+  var allAssigned=[];arcs.forEach(function(a){(a.beats||[]).forEach(function(b){allAssigned=allAssigned.concat(b.scenes||[])})});
+  var unassigned=scenes.filter(function(s){return allAssigned.indexOf(s.id)===-1});
+  h+='<div class="scenes-header flex-between"><div class="section-label" style="margin:0">ESCENAS'+(beat?' — '+beat.name:'')+'</div><button class="btn" onclick="openModal(\'scene\',null)">+ Nueva escena</button></div>';
+  var displayScenes=beat?beatScenes:unassigned;
+  if(displayScenes.length===0){
+    h+='<div class="empty-state"><div class="empty-state-desc">'+(beat?'No hay escenas en este beat.':'No hay escenas sin asignar.')+'</div></div>';
+  } else {
+    h+='<div class="scene-grid">';
+    displayScenes.forEach(function(s){
+      var typeClass=s.type==='combat'?'combat':'social';
+      var badge=s.type==='combat'?'badge-combat':'badge-social';
+      var badgeText=s.type==='combat'?'Combate':'Narrativa';
+      var statusCls=s.debrief?'status-debrief':(s.status==='active'?'status-active':'status-ready');
+      var statusText=s.debrief?'✓ Debrief':(s.status==='active'?'▶ Activa':'Lista');
+      h+='<div class="scene-card '+typeClass+'" onclick="selectedSceneId=\''+s.id+'\';nav(\'scenes\')">';
+      h+='<span class="scene-badge '+badge+'">'+badgeText+'</span>';
+      if(s.sporadic)h+=' <span style="font-size:11px;color:var(--gold)">(esporádica)</span>';
+      h+='<span class="scene-status '+statusCls+'">'+statusText+'</span>';
+      h+='<div class="scene-name">'+s.name+'</div>';
+      if(s.setup&&s.setup.hook)h+='<div class="scene-detail">'+s.setup.hook+'</div>';
+      if(s.type==='combat')h+='<button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center" onclick="event.stopPropagation();startCombatFromScene(\''+s.id+'\')">Iniciar combate</button>';
+      // Debrief consequences
+      if(s.debrief&&s.debrief.consequences&&s.debrief.consequences.length>0){
+        s.debrief.consequences.forEach(function(c){
+          h+='<div class="scene-flag flag-consequence">⚠ '+c+'</div>';
+        });
+      }
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  // Unassigned scenes section
+  if(beat&&unassigned.length>0){
+    h+='<div class="section-label" style="margin-top:20px">ESCENAS SIN ASIGNAR</div><div class="scene-grid">';
+    unassigned.forEach(function(s){
+      h+='<div class="scene-card social" onclick="selectedSceneId=\''+s.id+'\';nav(\'scenes\')"><div class="scene-name">'+s.name+'</div><div class="scene-detail">'+((s.setup&&s.setup.hook)||'Sin hook')+'</div></div>';
+    });
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
+
+function addBeat(){
+  var camp=dbLoadSingle('campaign');
+  if(!camp)return;
+  var name=prompt('Nombre del beat:');
+  if(!name)return;
+  if(!camp.arcs)camp.arcs=[{id:'arc-1',name:'Arco I',beats:[]}];
+  camp.arcs[0].beats.push({id:'beat-'+uid(),name:name,order:camp.arcs[0].beats.length+1,scenes:[]});
+  dbSaveSingle('campaign',camp);
+  renderCampaign();
+}
+
+/* ══════════════════════════════════════════════
+   RENDER: LIBRARY
+   ══════════════════════════════════════════════ */
+function renderLibrary(){
+  var el=document.getElementById('library-content');if(!el)return;
+  var tabs=[{id:'npcs',label:'NPCs'},{id:'villains',label:'Villanos'},{id:'bestiary',label:'Bestiario'},{id:'loot',label:'Loot'}];
+  var h='<div class="section-label">BIBLIOTECA</div>';
+  h+='<div class="lib-category-tabs">';
+  tabs.forEach(function(t){
+    var count=dbGetAll(t.id).length;
+    h+='<div class="lib-cat-tab'+(selectedLibTab===t.id?' active':'')+'" onclick="selectedLibTab=\''+t.id+'\';selectedLibItem=null;renderLibrary()">'+t.label+' <span class="tab-count">'+count+'</span></div>';
+  });
+  h+='</div>';
+  var items=dbGetAll(selectedLibTab);
+  var tableLabel={npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item'}[selectedLibTab];
+  h+='<div style="margin-bottom:12px"><button class="btn btn-primary" onclick="openModal(\''+selectedLibTab+'\',null)">+ Nuevo '+tableLabel+'</button></div>';
+  h+='<div class="library-layout">';
+  // List
+  h+='<div class="library-list">';
+  h+='<div class="library-search"><input type="text" id="lib-search" placeholder="Buscar..." oninput="filterLibrary(this.value)"></div>';
+  h+='<div id="lib-list-items">';
+  h+=renderLibList(items);
+  h+='</div></div>';
+  // Detail
+  h+='<div class="library-detail" id="lib-detail">';
+  if(selectedLibItem){h+=renderLibDetail(selectedLibTab,selectedLibItem)}
+  else{h+='<div class="empty-state"><div class="empty-state-desc">Selecciona un item de la lista</div></div>'}
+  h+='</div></div>';
+  el.innerHTML=h;
+}
+
+function renderLibList(items){
+  if(items.length===0)return'<div class="empty-state"><div class="empty-state-desc">Vacío</div></div>';
+  var h='';
+  items.forEach(function(item){
+    var sel=selectedLibItem===item.id?' selected':'';
+    h+='<div class="entity-list-item'+sel+'" onclick="selectedLibItem=\''+item.id+'\';renderLibrary()">';
+    h+='<div><div style="font-size:14px;font-weight:600">'+item.name+'</div>';
+    if(item.role)h+='<div style="font-size:12px;color:var(--ink3)">'+item.role+'</div>';
+    if(item.type)h+='<div style="font-size:12px;color:var(--ink3)">'+item.type+(item.difficulty?' · '+diffLabel(item.difficulty):'')+'</div>';
+    if(item.rarity)h+='<div style="font-size:12px;color:var(--ink3)">'+item.type+' · <span class="'+rarityClass(item.rarity)+'">'+item.rarity+'</span></div>';
+    h+='</div>';
+    h+='<button class="delete-btn" onclick="event.stopPropagation();if(confirm(\'¿Eliminar '+item.name+'?\')){dbDelete(\''+selectedLibTab+'\',\''+item.id+'\');selectedLibItem=null;renderLibrary()}" title="Eliminar">×</button>';
+    h+='</div>';
+  });
+  return h;
+}
+
+function renderLibDetail(table,id){
+  var item=dbGetById(table,id);
+  if(!item)return'<div class="empty-state">No encontrado</div>';
+  var h='<div style="display:flex;justify-content:space-between;align-items:start"><div class="detail-header"><div class="detail-name">'+item.name+'</div>';
+  if(item.role)h+='<div class="detail-role">'+item.role+'</div>';
+  if(item.type&&table==='bestiary')h+='<div class="detail-role">'+item.type+' · <span class="difficulty-tag diff-'+(item.difficulty||'medium')+'">'+diffLabel(item.difficulty)+'</span></div>';
+  if(item.rarity)h+='<div class="detail-role">'+item.type+' · <span class="loot-rarity '+rarityClass(item.rarity)+'">'+item.rarity+'</span></div>';
+  h+='</div><button class="btn" onclick="openModal(\''+table+'\',\''+item.id+'\')">Editar</button></div>';
+  // Fields based on table
+  var fields=[];
+  if(table==='npcs')fields=[['MOTIVACIÓN','motivation'],['LO QUE SABE','knows'],['LO QUE QUIERE','wants']];
+  if(table==='villains'){fields=[['MOTIVACIÓN','motivation'],['ARCO NARRATIVO','arc']];
+    if(item.stats)h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+item.stats.hp+'</span><span class="creature-stat dmg">Daño '+item.stats.dmg+'</span>'+(item.stats.special?'<span class="creature-stat special">'+item.stats.special+'</span>':'')+'</div></div>';
+  }
+  if(table==='bestiary'){fields=[['DESCRIPCIÓN','description']];
+    if(item.hp)h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+item.hp+'</span><span class="creature-stat dmg">Daño '+item.dmg+'</span>'+(item.resist?'<span class="creature-stat">Resist: '+item.resist+'</span>':'')+'</div></div>';
+    if(item.terrain)h+='<div class="detail-section"><div class="detail-section-label">TERRENO</div><div>'+item.terrain.join(' · ')+'</div></div>';
+  }
+  if(table==='loot'){fields=[['DESCRIPCIÓN','description'],['EFECTO','effect']]}
+  fields.forEach(function(f){
+    if(item[f[1]])h+='<div class="detail-section"><div class="detail-section-label">'+f[0]+'</div><div class="detail-section-value">'+item[f[1]]+'</div></div>';
+  });
+  if(item.voice)h+='<div class="detail-voice">"'+item.voice+'"</div>';
+  if(item.abilities&&item.abilities.length>0){
+    h+='<div class="detail-section"><div class="detail-section-label">HABILIDADES</div>';
+    item.abilities.forEach(function(a){h+='<div class="ability-line"><span class="ability-name">'+a.name+'</span> <span style="color:var(--ink4)">['+a.type+']</span><div style="font-size:13px;color:var(--ink3)">'+a.desc+'</div></div>'});
+    h+='</div>';
+  }
+  if(item.moves){
+    h+='<div class="detail-section"><div class="detail-section-label">MOVES ENTRE SESIONES</div>';
+    item.moves.forEach(function(m){h+='<div class="move-item"><input type="checkbox" '+(m.done?'checked':'')+' onchange="toggleMove(\''+item.id+'\',\''+m.text.replace(/'/g,"\\'")+'\')">'+'<span class="'+(m.done?'move-done':'')+'">'+m.text+'</span></div>'});
+    h+='</div>';
+  }
+  return h;
+}
+
+function toggleMove(villainId,moveText){
+  var v=dbGetById('villains',villainId);if(!v)return;
+  v.moves.forEach(function(m){if(m.text===moveText)m.done=!m.done});
+  dbUpdate('villains',villainId,{moves:v.moves});
+  renderLibrary();
+}
+
+function filterLibrary(q){
+  var items=dbGetAll(selectedLibTab);
+  if(q)items=items.filter(function(i){return i.name.toLowerCase().indexOf(q.toLowerCase())>-1});
+  document.getElementById('lib-list-items').innerHTML=renderLibList(items);
+}
+
+/* ══════════════════════════════════════════════
+   RENDER: PLAYERS
+   ══════════════════════════════════════════════ */
+function renderPlayers(){
+  var el=document.getElementById('players-content');if(!el)return;
+  var pls=dbGetAll('players');
+  if(pls.length===0){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay jugadores</div><div class="empty-state-desc">Agrega a los héroes de tu mesa.</div><button class="btn btn-primary" onclick="openModal(\'players\',null)">+ Agregar jugador</button></div>';
+    return;
+  }
+  var h='<div class="section-label">PERSONAJES JUGADORES</div><div style="margin-bottom:12px"><button class="btn btn-primary" onclick="openModal(\'players\',null)">+ Agregar jugador</button></div>';
+  h+='<div class="player-grid">';
+  pls.forEach(function(p){
+    var r=resolvePlayer(p);
+    h+='<div class="player-card" style="border-color:'+(r.factionColor||'var(--border)')+'">';
+    h+='<div class="player-card-header"><div class="player-avatar" style="background:'+r.bg+';color:'+r.fg+'">'+r.initial+'</div>';
+    h+='<div><div class="player-card-name">'+r.name+'</div><div class="player-card-class">'+r.cls+(r.sub?' · '+r.sub:'')+(r.kit?' · Kit '+r.kit:'')+' · Plano '+r.plano+'</div></div></div>';
+    h+='<div class="player-meta"><span class="player-tag faction">'+r.faction+'</span><span class="player-tag">HP '+r.hp+'</span><span class="player-tag">Aen +'+r.aenRegen+'/turno</span></div>';
+    if(r.backstory)h+='<div style="font-size:13px;color:var(--ink3);margin-top:8px;line-height:1.5">'+r.backstory+'</div>';
+    // Echo points
+    h+='<div class="echo-tracker"><div class="echo-tracker-label">ECHO</div><div class="echo-dots">';
+    for(var i=0;i<5;i++)h+='<div class="echo-dot'+(i<r.echo?' filled':'')+'">✦</div>';
+    h+='</div><button class="echo-btn" onclick="adjustEcho(\''+p.id+'\',1)" style="padding:4px 10px;font-size:12px;min-height:32px">+1</button></div>';
+    // Actions
+    h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn" onclick="openModal(\'players\',\''+p.id+'\')">Editar</button><button class="delete-btn" onclick="if(confirm(\'¿Eliminar '+r.name+'?\')){dbDelete(\'players\',\''+p.id+'\');renderPlayers()}">×</button></div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+function adjustEcho(pid,delta){
+  var p=dbGetById('players',pid);if(!p)return;
+  p.echo=Math.max(0,Math.min(5,(p.echo||0)+delta));
+  dbUpdate('players',pid,{echo:p.echo});
+  renderPlayers();
+}
+
+/* ══════════════════════════════════════════════
+   RENDER: SCENE BUILDER
+   ══════════════════════════════════════════════ */
+function renderSceneBuilder(sceneId){
+  var el=document.getElementById('scenes-content');if(!el)return;
+  if(!sceneId){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-title">Scene Builder</div><div class="empty-state-desc">Selecciona una escena desde Campaña o crea una nueva.</div><button class="btn btn-primary" onclick="openModal(\'scene\',null)">+ Nueva escena</button></div>';
+    return;
+  }
+  var s=dbGetById('scenes',sceneId);
+  if(!s){el.innerHTML='<div class="empty-state">Escena no encontrada</div>';return}
+  var setup=s.setup||{};
+  var h='<div class="section-label">SCENE BUILDER</div>';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="detail-name">'+s.name+'</div>';
+  h+='<div style="display:flex;gap:8px"><span class="scene-badge '+(s.type==='combat'?'badge-combat':'badge-social')+'">'+(s.type==='combat'?'Combate':'Narrativa')+'</span>';
+  h+='<button class="btn" onclick="openModal(\'scene\',\''+s.id+'\')">Editar</button>';
+  h+='<button class="btn" style="color:var(--red);border-color:var(--red)" onclick="if(confirm(\'¿Eliminar esta escena?\')){dbDelete(\'scenes\',\''+s.id+'\');selectedSceneId=null;nav(\'campaign\')}">Eliminar</button></div></div>';
+  // Setup display
+  var fields=[['HOOK',setup.hook],['CONFLICTO',setup.conflict],['BEAT DE SALIDA',setup.exit]];
+  fields.forEach(function(f){if(f[1])h+='<div class="form-section"><div class="form-label">'+f[0]+'</div><div style="font-size:14px;color:var(--ink2);line-height:1.6">'+f[1]+'</div></div>'});
+  if(setup.stakesFail||setup.stakesWin){
+    h+='<div class="form-section"><div class="form-label">STAKES</div><div class="stakes-row">';
+    h+='<div class="stake-box stake-fail"><div class="stake-label">SI FALLAN</div><div style="font-size:14px">'+(setup.stakesFail||'—')+'</div></div>';
+    h+='<div class="stake-box stake-win"><div class="stake-label">SI TRIUNFAN</div><div style="font-size:14px">'+(setup.stakesWin||'—')+'</div></div></div></div>';
+  }
+  // Participants
+  if(s.participants){
+    var npcs=(s.participants.npcIds||[]).map(function(id){return dbGetById('npcs',id)}).filter(Boolean);
+    if(npcs.length>0){
+      h+='<div class="form-section"><div class="form-label">NPCs</div>';
+      npcs.forEach(function(n){h+='<div class="npc-card"><div class="npc-name">'+n.name+'</div><div class="npc-role">'+(n.role||'')+'</div>'+(n.voice?'<div class="npc-voice">"'+n.voice+'"</div>':'')+'</div>'});
+      h+='</div>';
+    }
+    var creatures=(s.participants.creatureIds||[]);
+    if(creatures.length>0){
+      h+='<div class="form-section"><div class="form-label">CRIATURAS</div>';
+      creatures.forEach(function(ci){
+        var c=dbGetById('bestiary',ci.creatureId);
+        if(c)h+='<div class="creature-card"><div style="display:flex;justify-content:space-between"><div><span class="creature-name">'+c.name+'</span><span style="color:var(--ink3)"> ×'+ci.qty+'</span></div><span class="difficulty-tag diff-'+(c.difficulty||'medium')+'">'+diffLabel(c.difficulty)+'</span></div><div class="creature-stats-row"><span class="creature-stat hp">HP '+c.hp+'</span><span class="creature-stat dmg">'+c.dmg+'</span></div></div>';
+      });
+      h+='</div>';
+    }
+  }
+  // Lair actions
+  if(s.lairActions&&s.lairActions.length>0){
+    h+='<div class="form-section"><div class="form-label">LAIR ACTIONS</div><div class="lair-section">';
+    s.lairActions.forEach(function(la){h+='<div style="padding:6px 0;font-size:14px">· '+la+'</div>'});
+    h+='</div></div>';
+  }
+  // Combat start button
+  if(s.type==='combat')h+='<button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px;padding:16px" onclick="startCombatFromScene(\''+s.id+'\')">Iniciar combate</button>';
+  // Debrief section
+  h+='<div style="margin-top:24px;padding:16px;background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg)">';
+  h+='<div class="form-label">DEBRIEF</div>';
+  if(s.debrief){
+    if(s.debrief.whatHappened)h+='<div style="font-size:14px;color:var(--ink2);margin-bottom:12px;line-height:1.6">'+s.debrief.whatHappened+'</div>';
+    if(s.debrief.consequences)s.debrief.consequences.forEach(function(c){h+='<div class="scene-flag flag-consequence" style="margin-bottom:6px">⚠ '+c+'</div>'});
+  }
+  h+='<textarea class="form-input" id="debrief-text" placeholder="¿Qué pasó realmente?">'+(s.debrief&&s.debrief.whatHappened?s.debrief.whatHappened:'')+'</textarea>';
+  h+='<textarea class="form-input" id="debrief-consequences" style="margin-top:8px" placeholder="Consecuencias (una por línea)">'+(s.debrief&&s.debrief.consequences?s.debrief.consequences.join('\n'):'')+'</textarea>';
+  h+='<button class="btn btn-primary" style="margin-top:10px" onclick="saveDebrief(\''+s.id+'\')">Guardar debrief</button>';
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+function saveDebrief(sceneId){
+  var text=document.getElementById('debrief-text').value;
+  var cons=document.getElementById('debrief-consequences').value.split('\n').filter(function(c){return c.trim()});
+  dbUpdate('scenes',sceneId,{debrief:{whatHappened:text,consequences:cons},status:'debriefed'});
+  renderSceneBuilder(sceneId);
+}
+
+/* ══════════════════════════════════════════════
+   COMBAT TRACKER
+   ══════════════════════════════════════════════ */
+function startCombatFromScene(sceneId){
+  var scene=dbGetById('scenes',sceneId);if(!scene)return;
+  var units=[];expandedUnits={};
+  var pls=dbGetAll('players');
+  pls.forEach(function(p){
+    var r=resolvePlayer(p);
+    units.push({id:p.id,name:r.name,type:'player',initial:r.initial,bg:r.bg,fg:r.fg,cls:r.cls,plano:r.plano,abilities:r.abilities,hp:0,hpMax:0,actions:{mov:false,act1:false,act2:false},conditions:[]});
+  });
+  if(scene.participants&&scene.participants.creatureIds){
     scene.participants.creatureIds.forEach(function(ci){
-      var c = dbGetById('bestiary', ci.creatureId);
-      if(c) creatures.push({id:c.id,name:c.name,qty:ci.qty,hp:c.hp,dmg:c.dmg,diff:c.difficulty,resist:c.resist||'',abilities:c.abilities||[]});
+      var c=dbGetById('bestiary',ci.creatureId);if(!c)return;
+      for(var i=1;i<=ci.qty;i++){
+        units.push({id:c.id+'-'+i,name:c.name+(ci.qty>1?' #'+i:''),type:'creature',hp:c.hp,hpMax:c.hp,dmg:c.dmg||'',resist:c.resist||'',diff:c.difficulty||'medium',abilities:c.abilities||[],actions:{mov:false,act1:false,act2:false},conditions:[]});
+      }
     });
   }
-  return {name:scene.name,creatures:creatures,lairActions:scene.lairActions||[]};
+  combat={name:scene.name,sceneId:sceneId,round:1,turnIndex:0,units:units,order:units.map(function(u){return u.id}),lairActions:(scene.lairActions||[]).map(function(la,i){return{id:'la'+i,text:la,used:false}}),log:[]};
+  nav('session');
 }
 
-// Default sample encounter from DB
-var sampleEncounter = buildEncounterFromScene('scene-001') || {name:'Demo',creatures:[],lairActions:[]};
-
-/* COMBAT ENGINE */
-function startCombat(encounter){
-  var units=[];expandedUnits={};
-  players.forEach(function(p){
-    units.push({id:p.id,name:p.name,type:'player',initial:p.initial,bg:p.bg,fg:p.fg,cls:p.cls,plano:p.plano,
-      abilities:p.abilities,hp:0,hpMax:0,actions:{mov:false,act1:false,act2:false},conditions:[]});
-  });
-  encounter.creatures.forEach(function(c){
-    for(var i=1;i<=c.qty;i++){
-      units.push({id:c.id+'-'+i,name:c.name+(c.qty>1?' #'+i:''),type:'creature',hp:c.hp,hpMax:c.hp,dmg:c.dmg,
-        abilities:c.abilities,resist:c.resist||'',diff:c.diff,actions:{mov:false,act1:false,act2:false},conditions:[]});
-    }
-  });
-  combat={name:encounter.name,round:1,turnIndex:0,units:units,
-    order:units.map(function(u){return u.id}),
-    lairActions:encounter.lairActions.map(function(la,i){return{id:'la'+i,text:la,used:false}}),log:[]};
-  switchView('session');renderSession();
-}
 function endCombat(){combat=null;expandedUnits={};renderSession()}
 function nextTurn(){
   if(!combat)return;
   combat.turnIndex=(combat.turnIndex+1)%combat.order.length;
-  if(combat.turnIndex===0){
-    combat.round++;
-    combat.units.forEach(function(u){u.actions={mov:false,act1:false,act2:false}});
-    combat.lairActions.forEach(function(la){la.used=false});
-  }
-  var nid=combat.order[combat.turnIndex];
-  var nx=combat.units.find(function(u){return u.id===nid});
+  if(combat.turnIndex===0){combat.round++;combat.units.forEach(function(u){u.actions={mov:false,act1:false,act2:false}});combat.lairActions.forEach(function(la){la.used=false})}
+  var nx=combat.units.find(function(u){return u.id===combat.order[combat.turnIndex]});
   if(nx)nx.actions={mov:false,act1:false,act2:false};
   renderSession();
 }
-function adjustHp(uid,delta){
-  var u=combat.units.find(function(u){return u.id===uid});
-  if(u)u.hp=Math.max(0,Math.min(u.hpMax,u.hp+delta));
-  renderSession();
-}
-function toggleAction(uid,act){
-  var u=combat.units.find(function(u){return u.id===uid});if(!u)return;
-  u.actions[act]=!u.actions[act];
-  if(u.actions.mov&&u.actions.act1&&u.actions.act2){setTimeout(function(){nextTurn()},400)}
-  else renderSession();
-}
+function adjustHp(uid,delta){var u=combat.units.find(function(u){return u.id===uid});if(u)u.hp=Math.max(0,Math.min(u.hpMax,u.hp+delta));renderSession()}
+function toggleAction(uid,act){var u=combat.units.find(function(u){return u.id===uid});if(!u)return;u.actions[act]=!u.actions[act];if(u.actions.mov&&u.actions.act1&&u.actions.act2)setTimeout(function(){nextTurn()},400);else renderSession()}
 function toggleExpand(uid){expandedUnits[uid]=!expandedUnits[uid];renderSession()}
 function useLairAction(lid){var la=combat.lairActions.find(function(l){return l.id===lid});if(la)la.used=true;renderSession()}
-function addEcho(pid){var p=players.find(function(p){return p.id===pid});if(p&&p.echo<5)p.echo++;renderSession()}
-function getHpColor(pct){if(pct>60)return'var(--green)';if(pct>25)return'var(--orange)';return'var(--red)'}
+function addEchoTracker(pid){var p=dbGetById('players',pid);if(p&&(p.echo||0)<5){p.echo=(p.echo||0)+1;dbUpdate('players',pid,{echo:p.echo})}renderSession()}
 
-/* DRAG & DROP for initiative */
-function initDrag(){
-  var bar=document.getElementById('init-bar');if(!bar)return;
-  bar.addEventListener('dragstart',function(e){
-    var c=e.target.closest('[data-iid]');if(!c)return;
-    dragSrc=c.getAttribute('data-iid');c.style.opacity='0.4';e.dataTransfer.effectAllowed='move';
-  });
-  bar.addEventListener('dragover',function(e){e.preventDefault();
-    var c=e.target.closest('[data-iid]');if(c)c.style.borderColor='var(--green)';
-  });
-  bar.addEventListener('dragleave',function(e){
-    var c=e.target.closest('[data-iid]');if(c)c.style.borderColor='';
-  });
-  bar.addEventListener('drop',function(e){e.preventDefault();
-    var c=e.target.closest('[data-iid]');if(!c||!dragSrc)return;
-    var tid=c.getAttribute('data-iid');var o=combat.order;
-    var si=o.indexOf(dragSrc),ti=o.indexOf(tid);
-    if(si!==-1&&ti!==-1&&si!==ti){o.splice(si,1);o.splice(ti,0,dragSrc)}
-    dragSrc=null;renderSession();
-  });
-  bar.addEventListener('dragend',function(){dragSrc=null;
-    document.querySelectorAll('[data-iid]').forEach(function(c){c.style.opacity='';c.style.borderColor=''});
-  });
-}
-
-/* RENDER SESSION */
 function renderSession(){
   var el=document.getElementById('session-content');if(!el)return;
   if(!combat){
-    el.innerHTML='<div class="no-session"><div style="font-size:48px;opacity:.3">⚡</div><div class="no-session-title">No hay combate activo</div><div class="no-session-desc">Inicia un combate desde una escena en Campaña.</div><button class="btn btn-primary" onclick="startCombat(sampleEncounter)" style="font-size:15px;padding:14px 28px">Iniciar demo: Emboscada en el puente</button></div>';
+    el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay combate activo</div><div class="empty-state-desc">Inicia un combate desde una escena de tipo Combate en la vista de Campaña.</div></div>';
     return;
   }
-  var aid=combat.order[combat.turnIndex];var h='';
-
-  // Top bar
-  h+='<div class="tracker-bar">';
-  h+='<div style="font-size:17px;font-weight:700;font-family:var(--serif);flex:1;min-width:150px">'+combat.name+'</div>';
+  var h='';
+  h+='<div class="tracker-bar"><div style="font-size:17px;font-weight:700;font-family:var(--serif);flex:1">'+combat.name+'</div>';
   h+='<div class="tracker-stat"><div class="tracker-stat-label">RONDA</div><div class="tracker-stat-value">'+combat.round+'</div></div>';
   h+='<div class="tracker-stat"><div class="tracker-stat-label">TURNO</div><div class="tracker-stat-value">'+(combat.turnIndex+1)+'/'+combat.order.length+'</div></div>';
-  h+='<button class="btn btn-primary" onclick="nextTurn()" style="font-size:15px;padding:12px 24px">Siguiente turno →</button>';
+  h+='<button class="btn btn-primary" onclick="nextTurn()">Siguiente →</button>';
   h+='<button class="btn" onclick="endCombat()">Terminar</button></div>';
-
-  // Initiative bar
+  // Initiative
   h+='<div class="initiative-bar" id="init-bar">';
   combat.order.forEach(function(id,idx){
     var u=combat.units.find(function(x){return x.id===id});
@@ -1164,129 +962,224 @@ function renderSession(){
     if(idx<combat.turnIndex)cls+=' done';
     if(u.type==='creature'&&u.hp<=0)cls+=' dead';
     if(u.type==='player')cls+=' player';
-    if(u.type==='player'&&idx>combat.turnIndex&&idx!==combat.turnIndex)cls+=' sinergia-eligible';
-    var lbl=u.type==='player'?u.initial:(u.name.length>10?u.name.substring(0,8)+'..':u.name);
-    h+='<div class="'+cls+'" draggable="true" data-iid="'+id+'" title="'+u.name+'" onclick="toggleExpand(\''+u.id+'\')">'+lbl+'</div>';
+    if(u.type==='player'&&idx>combat.turnIndex)cls+=' sinergia-eligible';
+    var lbl=u.type==='player'?u.initial:u.name.substring(0,8);
+    h+='<div class="'+cls+'" onclick="toggleExpand(\''+u.id+'\')" title="'+u.name+'">'+lbl+'</div>';
   });
   h+='</div>';
-
   // Sinergia
-  var sp=[];combat.order.forEach(function(id,idx){
-    var u=combat.units.find(function(x){return x.id===id});
-    if(u.type==='player'&&idx>combat.turnIndex)sp.push(u.name);
-  });
-  if(sp.length>0)h+='<div style="font-size:13px;color:var(--gold);margin-bottom:12px;padding:8px 14px;background:var(--gold-pale);border-radius:var(--r)">Sinergia disponible: <strong>'+sp.join(', ')+'</strong></div>';
-
-  // Unit cards
+  var sp=[];combat.order.forEach(function(id,idx){var u=combat.units.find(function(x){return x.id===id});if(u.type==='player'&&idx>combat.turnIndex)sp.push(u.name)});
+  if(sp.length>0)h+='<div style="font-size:13px;color:var(--gold);margin-bottom:12px;padding:8px 14px;background:var(--gold-pale);border-radius:var(--r)">Sinergia: <strong>'+sp.join(', ')+'</strong></div>';
+  // Units
   combat.order.forEach(function(id,idx){
     var u=combat.units.find(function(x){return x.id===id});
-    var isAct=idx===combat.turnIndex;
-    var isDead=u.type==='creature'&&u.hp<=0;
-    var isExp=expandedUnits[u.id];
-    var cls='unit-card-tracker';
-    if(isAct)cls+=' active-unit';if(isDead)cls+=' dead-unit';
-    h+='<div class="'+cls+'">';
-
-    // Header
+    var isAct=idx===combat.turnIndex;var isDead=u.type==='creature'&&u.hp<=0;var isExp=expandedUnits[u.id];
+    h+='<div class="unit-card-tracker'+(isAct?' active-unit':'')+(isDead?' dead-unit':'')+'">';
     h+='<div class="unit-header"><div style="cursor:pointer;flex:1" onclick="toggleExpand(\''+u.id+'\')">';
-    if(u.type==='player'){
-      h+='<div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+u.bg+';color:'+u.fg+'">'+u.initial+'</div>';
-      h+='<div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div><div class="unit-meta">'+u.cls+' · Plano '+u.plano+'</div></div></div>';
-    } else {
-      h+='<div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div>';
-      h+='<div class="unit-meta">Daño '+u.dmg+(u.resist?' · Resist: '+u.resist:'')+' <span class="difficulty-tag diff-'+u.diff+'" style="margin-left:8px">'+(u.diff==='easy'?'Fácil':u.diff==='medium'?'Medio':u.diff==='hard'?'Duro':'Jefe')+'</span></div></div>';
-    }
+    if(u.type==='player'){h+='<div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+u.bg+';color:'+u.fg+'">'+u.initial+'</div><div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div><div class="unit-meta">'+u.cls+' · Plano '+u.plano+'</div></div></div>'}
+    else{h+='<div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div><div class="unit-meta">Daño '+u.dmg+(u.resist?' · Resist: '+u.resist:'')+' <span class="difficulty-tag diff-'+u.diff+'">'+diffLabel(u.diff)+'</span></div></div>'}
     h+='</div>';
-    if(u.type==='creature'){
-      h+='<div class="hp-controls">';
-      h+='<input type="number" id="hp-'+u.id+'" placeholder="0" min="1">';
-      h+='<button class="btn btn-damage" onclick="event.stopPropagation();var v=parseInt(document.getElementById(\'hp-'+u.id+'\').value)||0;adjustHp(\''+u.id+'\',-v);document.getElementById(\'hp-'+u.id+'\').value=\'\'">Daño</button>';
-      h+='<button class="btn btn-heal" onclick="event.stopPropagation();var v=parseInt(document.getElementById(\'hp-'+u.id+'\').value)||0;adjustHp(\''+u.id+'\',v);document.getElementById(\'hp-'+u.id+'\').value=\'\'">Sana</button>';
-      h+='</div>';
-    }
+    if(u.type==='creature'){h+='<div class="hp-controls"><input type="number" id="hp-'+u.id+'" placeholder="0" min="1"><button class="btn btn-damage" onclick="event.stopPropagation();var v=parseInt(document.getElementById(\'hp-'+u.id+'\').value)||0;adjustHp(\''+u.id+'\',-v);document.getElementById(\'hp-'+u.id+'\').value=\'\'">Daño</button><button class="btn btn-heal" onclick="event.stopPropagation();var v=parseInt(document.getElementById(\'hp-'+u.id+'\').value)||0;adjustHp(\''+u.id+'\',v);document.getElementById(\'hp-'+u.id+'\').value=\'\'">Sana</button></div>'}
     h+='</div>';
-
-    // HP bar
-    if(u.type==='creature'){
-      var pct=Math.round((u.hp/u.hpMax)*100);
-      h+='<div class="hp-section"><div class="hp-display" style="color:'+getHpColor(pct)+'">'+u.hp+'<span style="font-size:13px;color:var(--ink4)">/'+u.hpMax+'</span></div>';
-      h+='<div class="hp-bar"><div class="hp-fill" style="width:'+pct+'%;background:'+getHpColor(pct)+'"></div></div></div>';
-    }
-
-    // Actions
-    h+='<div class="actions-row">';
-    h+='<label class="action-check"><input type="checkbox" '+(u.actions.mov?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'mov\')"> Mov</label>';
-    h+='<label class="action-check"><input type="checkbox" '+(u.actions.act1?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act1\')"> Acción 1</label>';
-    h+='<label class="action-check"><input type="checkbox" '+(u.actions.act2?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act2\')"> Acción 2</label>';
-    h+='</div>';
-
-    // Expanded abilities
-    if(isExp&&u.abilities&&u.abilities.length>0){
-      h+='<div class="abilities-compact"><div class="form-label" style="margin-bottom:6px">HABILIDADES</div>';
-      u.abilities.forEach(function(a){
-        h+='<div class="ability-line"><span class="ability-name">'+a.name+'</span>';
-        h+=' <span style="color:var(--ink4);font-size:11px">['+a.type+']</span>';
-        if(a.cost)h+=' <span style="color:var(--gold);font-size:11px;font-weight:600">'+a.cost+'</span>';
-        h+='<div style="font-size:12px;color:var(--ink3);margin-top:2px">'+a.desc+'</div></div>';
-      });
-      h+='</div>';
-    }
+    if(u.type==='creature'){var pct=Math.round((u.hp/u.hpMax)*100);h+='<div class="hp-section"><div class="hp-display" style="color:'+getHpColor(pct)+'">'+u.hp+'<span style="font-size:13px;color:var(--ink4)">/'+u.hpMax+'</span></div><div class="hp-bar"><div class="hp-fill" style="width:'+pct+'%;background:'+getHpColor(pct)+'"></div></div></div>'}
+    h+='<div class="actions-row"><label class="action-check"><input type="checkbox" '+(u.actions.mov?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'mov\')"> Mov</label><label class="action-check"><input type="checkbox" '+(u.actions.act1?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act1\')"> Acción 1</label><label class="action-check"><input type="checkbox" '+(u.actions.act2?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act2\')"> Acción 2</label></div>';
+    if(isExp&&u.abilities&&u.abilities.length>0){h+='<div class="abilities-compact"><div class="form-label" style="margin-bottom:6px">HABILIDADES</div>';u.abilities.forEach(function(a){h+='<div class="ability-line"><span class="ability-name">'+a.name+'</span> <span style="color:var(--ink4)">['+a.type+']</span>'+(a.cost?' <span style="color:var(--gold)">'+a.cost+'</span>':'')+'<div style="font-size:12px;color:var(--ink3)">'+a.desc+'</div></div>'});h+='</div>'}
     h+='</div>';
   });
+  // Lair
+  if(combat.lairActions.length>0){h+='<div class="lair-panel"><div class="form-label" style="color:var(--orange)">LAIR ACTIONS — Ronda '+combat.round+'</div>';combat.lairActions.forEach(function(la){h+='<div class="lair-action-btn'+(la.used?' used':'')+'" onclick="useLairAction(\''+la.id+'\')"><input type="checkbox" style="width:20px;height:20px;pointer-events:none" '+(la.used?'checked':'')+'> '+la.text+'</div>'});h+='</div>'}
+  // Echo
+  h+='<div class="echo-panel"><div class="form-label" style="color:var(--gold)">ECHO POINTS</div>';
+  dbGetAll('players').forEach(function(p){h+='<div class="echo-row"><div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+(p.bg||'#444')+';color:'+(p.fg||'#fff')+'">'+(p.initial||p.name.charAt(0))+'</div><div class="echo-player-name">'+p.name+'</div></div><div style="display:flex;align-items:center;gap:8px"><div class="echo-count">'+(p.echo||0)+'</div><button class="echo-btn" onclick="addEchoTracker(\''+p.id+'\')">+1</button></div></div>'});
+  h+='</div>';
+  el.innerHTML=h;
+}
 
-  // Lair Actions
-  if(combat.lairActions.length>0){
-    h+='<div class="lair-panel"><div class="form-label" style="color:var(--orange)">LAIR ACTIONS — Ronda '+combat.round+'</div>';
-    combat.lairActions.forEach(function(la){
-      h+='<div class="lair-action-btn'+(la.used?' used':'')+'" onclick="useLairAction(\''+la.id+'\')">';
-      h+='<input type="checkbox" style="width:20px;height:20px;pointer-events:none" '+(la.used?'checked':'')+'> '+la.text+'</div>';
-    });
+/* ══════════════════════════════════════════════
+   RENDER: SETTINGS
+   ══════════════════════════════════════════════ */
+function renderSettings(){
+  var el=document.getElementById('settings-content');if(!el)return;
+  var h='<div class="section-label">CONFIGURACIÓN</div>';
+  // Gamedata info
+  h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">GAME DATA</div><div style="font-size:14px;color:var(--ink2);line-height:1.8">';
+  if(typeof GAMEDATA!=='undefined'){h+='Clases: '+GAMEDATA.classes.length+' ('+GAMEDATA.classes.reduce(function(a,c){return a+c.subclasses.length},0)+' subclases)<br>Facciones: '+GAMEDATA.factions.length+'<br>Kits: '+GAMEDATA.kits.length+'<br>Condiciones: '+GAMEDATA.conditions.length}
+  else{h+='⚠ gamedata.js no encontrado'}
+  h+='<br><br>';
+  DB_TABLES.forEach(function(t){var d=dbLoad(t);var c=Array.isArray(d)?d.length:(d?1:0);h+=t+': '+c+'<br>'});
+  h+='</div></div>';
+  // Export
+  h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">EXPORTAR</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">';
+  DB_TABLES.forEach(function(t){h+='<button class="btn" onclick="exportDB(\''+t+'\')">'+t+'</button>'});
+  h+='<button class="btn btn-primary" onclick="exportAll()">Todo</button></div></div>';
+  // Import
+  h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">IMPORTAR</div><input type="file" accept=".json" style="font-size:14px;margin-top:8px" onchange="importFile(this)"><div id="import-status" style="margin-top:8px;font-size:13px"></div></div>';
+  // Reset
+  h+='<div style="background:var(--surface);border:2px solid var(--red);border-radius:var(--r-lg);padding:18px"><div class="form-label" style="color:var(--red)">ZONA DE PELIGRO</div><button class="btn" style="border-color:var(--red);color:var(--red);margin-top:8px" onclick="if(confirm(\'¿Borrar TODO?\')){DB_TABLES.forEach(function(t){localStorage.removeItem(dbKey(t))});localStorage.removeItem(dbKey(\'_initialized\'));location.reload()}">Resetear datos</button></div>';
+  el.innerHTML=h;
+}
+
+function exportDB(t){var d=dbLoad(t);if(!d){alert('Sin datos');return}var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='eq_'+t+'.json';a.click()}
+function exportAll(){var all={};DB_TABLES.forEach(function(t){all[t]=dbLoad(t)});var b=new Blob([JSON.stringify(all,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='eq_backup_'+new Date().toISOString().split('T')[0]+'.json';a.click()}
+function importFile(input){var f=input.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);if(d.campaign||d.npcs||d.scenes){DB_TABLES.forEach(function(t){if(d[t])dbSave(t,d[t])});document.getElementById('import-status').innerHTML='✅ Importado'}else if(Array.isArray(d)){var n=f.name.replace('eq_','').replace('.json','');if(DB_TABLES.includes(n)){dbSave(n,d);document.getElementById('import-status').innerHTML='✅ '+n+' importado'}}}catch(err){document.getElementById('import-status').innerHTML='❌ Error: '+err.message}input.value=''};r.readAsText(f)}
+
+/* ══════════════════════════════════════════════
+   MODALS — Create/Edit forms
+   ══════════════════════════════════════════════ */
+function openModal(type,id){
+  var item=null;
+  var table=type;
+  if(id)item=dbGetById(table,id);
+  var title=(id?'Editar':'Crear')+' '+{npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item',players:'Jugador',scene:'Escena',campaign:'Campaña'}[type];
+  var fields=getFormFields(type,item);
+  var h='<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-title">'+title+'</div>';
+  h+=fields;
+  h+='<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveModal(\''+type+'\','+(id?'\''+id+'\'':'null')+')">Guardar</button></div></div></div>';
+  document.getElementById('modal-root').innerHTML=h;
+}
+
+function closeModal(){document.getElementById('modal-root').innerHTML=''}
+
+function getFormFields(type,item){
+  var v=item||{};var h='';
+  function field(label,name,val,placeholder,textarea){
+    h+='<div class="form-section"><div class="form-label">'+label+'</div>';
+    if(textarea)h+='<textarea class="form-input" id="f-'+name+'" placeholder="'+(placeholder||'')+'">'+(val||'')+'</textarea>';
+    else h+='<input class="form-input" id="f-'+name+'" type="text" value="'+(val||'').replace(/"/g,'&quot;')+'" placeholder="'+(placeholder||'')+'">';
     h+='</div>';
   }
+  function select(label,name,options,val){
+    h+='<div class="form-section"><div class="form-label">'+label+'</div><select class="form-input" id="f-'+name+'">';
+    options.forEach(function(o){h+='<option value="'+o.value+'" '+(val===o.value?'selected':'')+'>'+o.label+'</option>'});
+    h+='</select></div>';
+  }
 
-  // Echo Points
-  h+='<div class="echo-panel"><div class="form-label" style="color:var(--gold)">ECHO POINTS</div>';
-  players.forEach(function(p){
-    h+='<div class="echo-row"><div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+p.bg+';color:'+p.fg+'">'+p.initial+'</div><div class="echo-player-name">'+p.name+'</div></div>';
-    h+='<div style="display:flex;align-items:center;gap:8px"><div class="echo-count">'+p.echo+'</div><button class="echo-btn" onclick="addEcho(\''+p.id+'\')">+1</button></div></div>';
-  });
-  h+='</div>';
-
-  el.innerHTML=h;
-  initDrag();
+  if(type==='campaign'){
+    field('Nombre','name',v.name,'Nombre de la campaña');
+  }
+  if(type==='scene'){
+    field('Nombre','name',v.name,'Nombre de la escena');
+    select('Tipo','type',[{value:'combat',label:'Combate'},{value:'narrative',label:'Narrativa'}],v.type||'narrative');
+    field('Hook','hook',v.setup?v.setup.hook:'','¿Cómo abre la escena?',true);
+    field('Conflicto','conflict',v.setup?v.setup.conflict:'','¿Qué hay que resolver?',true);
+    field('Si fallan','stakesFail',v.setup?v.setup.stakesFail:'','¿Qué pierden?');
+    field('Si triunfan','stakesWin',v.setup?v.setup.stakesWin:'','¿Qué ganan?');
+    field('Beat de salida','exit',v.setup?v.setup.exit:'','¿Cómo conecta con lo siguiente?',true);
+    field('Lair Actions (una por línea)','lairActions',(v.lairActions||[]).join('\n'),'',true);
+    field('Notas DM','notes',v.notes,'Recordatorios, música...',true);
+  }
+  if(type==='npcs'){
+    field('Nombre','name',v.name,'Nombre del NPC');
+    field('Rol','role',v.role,'Ej: Comerciante, Autoridad, Espía');
+    field('Raza','race',v.race,'Ej: Humano, Elfo, Goblin');
+    field('Motivación','motivation',v.motivation,'¿Qué lo mueve?',true);
+    field('Lo que sabe','knows',v.knows,'Información que puede revelar',true);
+    field('Lo que quiere','wants',v.wants,'¿Qué busca?',true);
+    field('Voz','voice',v.voice,'Una frase ejemplo de cómo habla');
+  }
+  if(type==='villains'){
+    field('Nombre','name',v.name,'Nombre del villano');
+    field('Rol','role',v.role,'Ej: Líder, Agente, Mercenario');
+    select('Estado','status',[{value:'prepared',label:'Preparado'},{value:'active',label:'Activo'}],v.status||'prepared');
+    field('Motivación','motivation',v.motivation,'',true);
+    field('Arco narrativo','arc',v.arc,'Fases del plan del villano',true);
+    field('HP','hp',v.stats?v.stats.hp:'','');
+    field('Daño','dmg',v.stats?v.stats.dmg:'','Ej: 8-14');
+    field('Especial','special',v.stats?v.stats.special:'','Habilidad especial');
+    field('Resistencia','resist',v.stats?v.stats.resist:'','');
+  }
+  if(type==='bestiary'){
+    field('Nombre','name',v.name,'');
+    var G=typeof GAMEDATA!=='undefined'?GAMEDATA:null;
+    if(G)select('Tipo','btype',G.creatureTypes.map(function(t){return{value:t,label:t}}),v.type||'Bestia');
+    else field('Tipo','btype',v.type,'Bestia, No-muerto, etc.');
+    if(G)select('Dificultad','difficulty',G.difficulties.map(function(d){return{value:d.id,label:d.name}}),v.difficulty||'medium');
+    else field('Dificultad','difficulty',v.difficulty,'easy/medium/hard/boss');
+    field('HP','hp',v.hp,'');
+    field('Daño','dmg',v.dmg,'Ej: 4-8');
+    field('Resistencia','resist',v.resist,'');
+    field('Terreno (separado por comas)','terrain',(v.terrain||[]).join(', '),'Bosque, Cueva, Ruinas');
+    field('Descripción narrativa','description',v.description,'Cómo se ve, suena, huele',true);
+    field('Lair Actions sugeridas (una por línea)','lairSugg',(v.lairSuggestions||[]).join('\n'),'',true);
+  }
+  if(type==='loot'){
+    field('Nombre','name',v.name,'');
+    select('Tipo','ltype',[{value:'Arma',label:'Arma'},{value:'Narrativo',label:'Narrativo'},{value:'Información',label:'Información'},{value:'Consumible',label:'Consumible'}],v.type||'Consumible');
+    var G=typeof GAMEDATA!=='undefined'?GAMEDATA:null;
+    if(G)select('Rareza','rarity',G.rarities.map(function(r){return{value:r.id,label:r.name}}),v.rarity||'common');
+    field('Descripción','description',v.description,'',true);
+    field('Efecto mecánico','effect',v.effect,'',true);
+  }
+  if(type==='players'){
+    field('Nombre','name',v.name,'');
+    field('Inicial','initial',v.initial||'','Una letra');
+    field('Color fondo','bg',v.bg||'#444','Hex color');
+    field('Color texto','fg',v.fg||'#fff','Hex color');
+    var G=typeof GAMEDATA!=='undefined'?GAMEDATA:null;
+    if(G){
+      select('Facción','factionId',G.factions.map(function(f){return{value:f.id,label:f.name}}),v.factionId||'');
+      select('Clase','classId',G.classes.map(function(c){return{value:c.id,label:c.nameEs+' ('+c.type+')'}}),v.classId||'');
+      // Subclass - will show all, ideally filtered by class
+      var allSubs=[];G.classes.forEach(function(c){c.subclasses.forEach(function(s){allSubs.push({value:s.id,label:c.nameEs+' → '+s.name})})});
+      select('Subclase','subclassId',allSubs,v.subclassId||'');
+      select('Kit','kitId',G.kits.map(function(k){return{value:k.id,label:k.name+' ('+k.fantasy+')'}}),v.kitId||'');
+    }
+    field('Plano','plano',v.plano||1,'1-4');
+    field('Backstory','backstory',v.backstory||'','Historia del personaje',true);
+  }
+  return h;
 }
 
-/* NAVIGATION */
-var breadcrumbs={campaign:'📜 Campaña › Arco I › <span>Sesión 3</span>',scenes:'🎬 <span>Scene Builder</span>',library:'📖 <span>Biblioteca</span>',players:'👥 <span>Personajes</span>',session:'⚡ <span>Sesión en vivo</span>',settings:'⚙️ <span>Configuración</span>'};
-function switchView(id){
-  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
-  var t=document.getElementById('view-'+id);if(t)t.classList.add('active');
-  document.querySelectorAll('.sb-item').forEach(function(i){i.classList.remove('active')});
-  var items=document.querySelectorAll('.sb-item');
-  var map={campaign:0,scenes:1,library:2,players:3,session:4};
-  if(map[id]!==undefined)items[map[id]].classList.add('active');
-  document.getElementById('breadcrumb').innerHTML=breadcrumbs[id]||'';
-  if(id==='session')renderSession();
-  if(id==='settings')renderSettings();
+function saveModal(type,id){
+  function gv(name){var el=document.getElementById('f-'+name);return el?el.value.trim():''}
+  var item={};
+  if(type==='campaign'){
+    item={id:id||'camp-'+uid(),name:gv('name'),arcs:[{id:'arc-1',name:'Arco I',beats:[]}]};
+    dbSaveSingle('campaign',item);closeModal();nav('campaign');return;
+  }
+  if(type==='scene'){
+    item={name:gv('name'),type:gv('type'),status:'ready',sporadic:false,
+      setup:{hook:gv('hook'),conflict:gv('conflict'),stakesFail:gv('stakesFail'),stakesWin:gv('stakesWin'),exit:gv('exit')},
+      participants:{npcIds:[],creatureIds:[]},
+      lairActions:gv('lairActions').split('\n').filter(function(l){return l.trim()}),
+      objectives:{session:'',scene:[],personal:{}},notes:gv('notes'),debrief:null};
+    if(id){dbUpdate('scenes',id,item)}else{item.id='scene-'+uid();dbCreate('scenes',item);selectedSceneId=item.id}
+    closeModal();nav('scenes');return;
+  }
+  if(type==='npcs'){
+    item={name:gv('name'),role:gv('role'),race:gv('race'),motivation:gv('motivation'),knows:gv('knows'),wants:gv('wants'),voice:gv('voice'),appearsIn:[],tags:[]};
+    if(id)dbUpdate('npcs',id,item);else dbCreate('npcs',item);
+  }
+  if(type==='villains'){
+    item={name:gv('name'),role:gv('role'),status:gv('status'),motivation:gv('motivation'),arc:gv('arc'),
+      stats:{hp:parseInt(gv('hp'))||0,dmg:gv('dmg'),special:gv('special'),resist:gv('resist')},abilities:[],moves:[],appearsIn:[]};
+    if(id)dbUpdate('villains',id,item);else dbCreate('villains',item);
+  }
+  if(type==='bestiary'){
+    item={name:gv('name'),type:gv('btype'),difficulty:gv('difficulty'),hp:parseInt(gv('hp'))||10,dmg:gv('dmg'),resist:gv('resist'),
+      terrain:gv('terrain').split(',').map(function(t){return t.trim()}).filter(Boolean),
+      description:gv('description'),abilities:[],
+      lairSuggestions:gv('lairSugg').split('\n').filter(function(l){return l.trim()}),appearsIn:[]};
+    if(id)dbUpdate('bestiary',id,item);else dbCreate('bestiary',item);
+  }
+  if(type==='loot'){
+    item={name:gv('name'),type:gv('ltype'),rarity:gv('rarity'),description:gv('description'),effect:gv('effect'),delivered:false,intendedFor:null,plannedScene:null};
+    if(id)dbUpdate('loot',id,item);else dbCreate('loot',item);
+  }
+  if(type==='players'){
+    item={name:gv('name'),initial:gv('initial')||gv('name').charAt(0),bg:gv('bg'),fg:gv('fg'),
+      factionId:gv('factionId'),classId:gv('classId'),subclassId:gv('subclassId'),kitId:gv('kitId'),
+      plano:parseInt(gv('plano'))||1,backstory:gv('backstory'),echo:0};
+    if(id){var old=dbGetById('players',id);if(old)item.echo=old.echo;dbUpdate('players',id,item)}
+    else dbCreate('players',item);
+  }
+  closeModal();renderView(currentView);
 }
-function selectBeat(el){document.querySelectorAll('.beat-card').forEach(function(b){b.classList.remove('active')});el.classList.add('active')}
-function selectType(el){
-  document.querySelectorAll('.type-option').forEach(function(t){t.classList.remove('selected')});el.classList.add('selected');
-  var isCombat=el.getAttribute('data-type')==='combat';
-  document.querySelectorAll('.combat-only').forEach(function(s){s.classList.toggle('visible',isCombat)});
-}
-function switchBuilderTab(el,pid){
-  document.querySelectorAll('.builder-tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active');
-  document.querySelectorAll('.builder-panel').forEach(function(p){p.classList.remove('active')});
-  var p=document.getElementById('panel-'+pid);if(p)p.classList.add('active');
-}
-function switchLibCategory(el,cid){
-  document.querySelectorAll('.lib-cat-tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active');
-  document.querySelectorAll('.lib-content').forEach(function(c){c.classList.remove('active')});
-  var t=document.getElementById('lib-'+cid);if(t)t.classList.add('active');
-}
-function openScene(){switchView('scenes')}
-function addSporadicScene(){switchView('scenes')}
+
+/* ══════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════ */
+nav('campaign');
 </script>
 </body>
 </html>
