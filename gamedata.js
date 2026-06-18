@@ -83,7 +83,7 @@ defaultLairActions: [
 ],
 
 /* ══════════════════════════════════════════════
-   FACTIONS (6)
+   FACTIONS
    ══════════════════════════════════════════════ */
 factions: [
   {id:"cheran",name:"Teocracia de Cherán",color:"#9b2020",icon:"🔥",
@@ -92,231 +92,235 @@ factions: [
    feats:[
     {response:"La fe es mi fuerza",name:"Convicción de Engar",attr:"Cuerpo",desc:"Ventaja cuando tu presencia física como portador de la fe debe imponerse."},
     {response:"La fe es mi cadena",name:"La Grieta en la Fe",attr:"Mente",desc:"Ventaja al persuadir, debatir o influenciar a quienes comparten o cuestionan una fe."},
-    {response:"La fe es mi duda",name:"Herejía Necesaria",attr:"Echo",desc:"Ventaja al canalizar magia que contradice la doctrina establecida. Los hechizos no aprobados ganan poder."}
-   ]},
-
-  {id:"vorin",name:"Casa Vorin",color:"#1a5c7a",icon:"⚜️",
-   declaration:"El juego es la vida. Los buscadores ganan. El débil se desmorona.",
-   question:"¿Juegas para ganar o para aprender?",
+    {response:"Yo elijo en qué creer",name:"Ojo del Hereje",attr:"Echo",desc:"Detectas manipulación ideológica, creencias falsas o motivaciones ocultas bajo un manto de fe."}
+  ]},
+  {id:"vorin",name:"Casa Vorin",color:"#1a4a7a",icon:"⚖️",
+   declaration:"El comercio es poder. La información es poder. Todo tiene precio — incluyendo tú.",
+   question:"¿Qué estás dispuesto a sacrificar?",
    feats:[
-    {response:"Para ganar",name:"Instinto Depredador",attr:"Cuerpo",desc:"Ventaja en ataques contra enemigos vulnerables o en inferioridad numérica."},
-    {response:"Para aprender",name:"Mente de Ajedrez",attr:"Mente",desc:"Ventaja al predecir movimientos enemigos o planificar estrategia de grupo."},
-    {response:"Para jugar",name:"Suerte del Tahur",attr:"Echo",desc:"Una vez por sesión, puedes relanzar cualquier dado que hayas tirado."}
-   ]},
-
-  {id:"escarlata",name:"La Orden Escarlata",color:"#c41e3a",icon:"🗡️",
-   declaration:"La justicia es nuestra responsabilidad. Actuar es honor.",
-   question:"¿La venganza es justicia?",
+    {response:"Todo tiene precio",name:"El Precio Exacto",attr:"Mente",desc:"Ventaja al negociar, proponer un trato o convencer del valor real de algo."},
+    {response:"Hay cosas que no se venden",name:"Arquitectura del Poder",attr:"Echo",desc:"Percibes quién tiene el poder real — los flujos ocultos de influencia."},
+    {response:"El precio lo pagan otros",name:"Sombra en el Salón",attr:"Cuerpo",desc:"Ventaja al navegar espacios de poder donde tu presencia abre puertas."}
+  ]},
+  {id:"escarlata",name:"La Orden Escarlata",color:"#8b1a1a",icon:"🛡️",
+   declaration:"No servimos a ningún rey. Solo un código y la voluntad de morir por él.",
+   question:"¿Defiendes hasta morir, negocias, o evalúas?",
    feats:[
-    {response:"Sí",name:"Vendetta Sagrada",attr:"Cuerpo",desc:"Ventaja en ataques contra aquellos que hayan lastimado a los tuyos."},
-    {response:"No, pero la protección es",name:"Escudo de Inocentes",attr:"Mente",desc:"Ventaja al defender a civiles o aliados en peligro. Reducen condiciones negativas."},
-    {response:"La venganza es ciclos",name:"Redención Imposible",attr:"Echo",desc:"Ventaja cuando intentes apaciguar conflictos o converter enemigos. Una vez por escena."}
-   ]},
-
-  {id:"aetharion",name:"Aetharion",color:"#8b4789",icon:"📖",
-   declaration:"El conocimiento es vida eterna. El ignorante está condenado.",
-   question:"¿El conocimiento se comparte o se posee?",
+    {response:"Defiendo hasta morir",name:"La Última Palabra",attr:"Cuerpo",desc:"Ventaja al imponerte físicamente para defender a alguien vulnerable."},
+    {response:"Negocio",name:"La Mesa entre Espadas",attr:"Mente",desc:"Ventaja al proponer acuerdo o mediación en medio de un conflicto."},
+    {response:"Evalúo si vale la pena",name:"La Pregunta del Veterano",attr:"Echo",desc:"Lees los riesgos reales y motivaciones profundas antes de actuar."}
+  ]},
+  {id:"aetharion",name:"Aetharion",color:"#c9a84c",icon:"🦅",
+   declaration:"El águila no negocia. Protege. Y lo que protege, lo protege para siempre.",
+   question:"¿A qué eres leal?",
    feats:[
-    {response:"Se posee",name:"Secretos Guardados",attr:"Mente",desc:"Ventaja al guardar información. Puedes mentir detectando mentiras en otros."},
-    {response:"Se comparte",name:"Sabiduría Abierta",attr:"Mente",desc:"Ventaja cuando enseñas o transmites conocimiento. Los aliados aprenden habilidades más rápido."},
-    {response:"Se consume",name:"Magia del Olvido",attr:"Echo",desc:"Ventaja en hechizos de Control. Puedes borrar recuerdos específicos una vez por sesión."}
-   ]},
-
-  {id:"urushan",name:"Urushan",color:"#2d5016",icon:"🏹",
-   declaration:"La naturaleza es la ley. Equilibrio y ciclo son sagrados.",
-   question:"¿Sacrificas lo individual por la tribu?",
+    {response:"Leal a la institución",name:"El Peso del Águila",attr:"Cuerpo",desc:"Tu presencia como representante de Aetharion establece autoridad — tu porte habla antes que tú."},
+    {response:"Leal al hombre",name:"Vínculo Inquebrantable",attr:"Mente",desc:"Ventaja al interceder verbalmente por alguien a quien debes lealtad."},
+    {response:"Leal a la victoria",name:"Lectura del Campo",attr:"Echo",desc:"Identificas el punto de máxima tensión — el momento o persona que puede cambiar todo."}
+  ]},
+  {id:"urushan",name:"Urushan",color:"#2a6a6a",icon:"⚓",
+   declaration:"El mar no perdona. Nosotros tampoco. Pero el mar es justo — y nosotros también.",
+   question:"¿Cómo navegas el mundo?",
    feats:[
-    {response:"Siempre",name:"Deber Tribal",attr:"Cuerpo",desc:"Ventaja en acciones que beneficien al grupo incluso si te dañan."},
-    {response:"Solo si es necesario",name:"Equilibrio de Fuerzas",attr:"Mente",desc:"Ventaja cuando reconcilias facciones opuestas o medias conflictos."},
-    {response:"Nunca, soy libre",name:"Espíritu Salvaje",attr:"Echo",desc:"Ventaja en ataques cuando no hay aliados adyacentes. El lobo solitario es fuerte."}
-   ]},
-
-  {id:"pueblos",name:"Los Pueblos sin Techo",color:"#665544",icon:"🏕️",
-   declaration:"No necesitamos reino. Necesitamos comunidad.",
-   question:"¿Qué amas más: la libertad o la familia?",
+    {response:"Creo en algo",name:"La Apuesta Genuina",attr:"Cuerpo",desc:"Ventaja cuando te juegas todo por una convicción — tu compromiso físico es innegable."},
+    {response:"Solo calculo",name:"La Lectura del Poder",attr:"Mente",desc:"Ventaja al analizar motivos ocultos y calcular el movimiento correcto."},
+    {response:"Anticipo",name:"La Sombra que Anticipa",attr:"Echo",desc:"Percibes lo que está por suceder antes de que se manifieste."}
+  ]},
+  {id:"pueblos",name:"Los Pueblos sin Techo",color:"#6a4a2a",icon:"🏕️",
+   declaration:"No tenemos tierra. No tenemos rey. Tenemos algo mejor: el camino.",
+   question:"¿Por qué caminas?",
    feats:[
-    {response:"La libertad",name:"Nómada del Viento",attr:"Cuerpo",desc:"Ventaja en movimiento y exploración. Ignoras terreno difícil una vez por combate."},
-    {response:"La familia",name:"Lazo de Sangre",attr:"Mente",desc:"Ventaja cuando luchas junto a tus hermanos de tribu. Compartes resistencias."},
-    {response:"Necesito ambas",name:"Rebelde de Corazón",attr:"Echo",desc:"Ventaja en acciones que desafíen autoridad injusta. Una vez por sesión, ignora un fallo."}
-   ]}
+    {response:"Huyo de algo",name:"Los Caminos que Nadie Ve",attr:"Cuerpo",desc:"Ventaja al navegar entornos desconocidos buscando rutas, refugios o recursos que nadie encuentra."},
+    {response:"Camino hacia algo",name:"El Propósito Claro",attr:"Echo",desc:"Tu determinación es palpable — los obstáculos humanos se apartan sin confrontación."},
+    {response:"Solo camino",name:"El que No Tiene Dueño",attr:"Mente",desc:"Te mueves entre grupos hostiles — tu naturaleza no alineada hace que cada facción te vea como propio."}
+  ]}
 ],
 
 /* ══════════════════════════════════════════════
-   CLASSES (10 + subclases)
+   CLASSES (10) + SUBCLASSES (24)
    ══════════════════════════════════════════════ */
 classes: [
+  /* ── FURY ── */
   {id:"fury",name:"Fury",nameEs:"Furia",type:"Fuerza",resource:"FURY",
    abilities:[
-    {name:"Golpe Salvaje",type:"Base",cost:"2 Aen",dmg:"5",desc:"Ataque cuerpo a cuerpo. Daño aumenta 1 por cada enemigo adyacente."},
-    {name:"Aullido de Guerra",type:"Base",cost:"2 Aen",dmg:null,desc:"Todos los aliados en radio 4 ganan +2 daño por 1 turno."},
-    {name:"Frenesí Berserker",type:"Heroica",cost:"3 Aen",dmg:"10",desc:"Atacas dos veces con ventaja. Ignoras condiciones de dolor. Drawback: pierdes 5 HP al terminar."}
+    {name:"Unstoppable",type:"Base",cost:"2 Aen",dmg:"6",desc:"Carga en línea recta arrasando todo. Atraviesa 3 casillas, derriba al impactar."},
+    {name:"Come At Me",type:"Base",cost:"2 Aen",dmg:null,desc:"Provoca a todos los enemigos en radio 2. Ganas +1 Aen por ataque recibido."},
+    {name:"Still Standing",type:"Heroica",cost:"3 Aen",dmg:null,desc:"Te niegas a caer. Recuperas 8 Vitalidad y contraataque gratis. Drawback: -1d8 Vitalidad al terminar."}
    ],
    subclasses:[
-    {id:"berserker_sub",name:"Berserker",desc:"Furia sin control. Daño puro.",
+    {id:"berserker",name:"Berserker",desc:"Más daño recibes, más peligroso te vuelves.",
      abilities:[
-      {name:"Destrucción Total",type:"Base",cost:"3 Aen",dmg:"8",desc:"Ataque AOE radio 2. Todos toman daño. Drawback: -1d4 Aen al terminar."},
-      {name:"Apoteosis de Sangre",type:"Heroica",cost:"4 Aen",dmg:"15",desc:"Daño triple. Crítico automático. Duración: 1 turno. Drawback: -1d8 Aen al terminar."}
-     ]},
-    {id:"colossus",name:"Colossus",desc:"Furia canalizada en puro tamaño.",
+      {name:"Blood Frenzy",type:"Base",cost:"3 Aen",dmg:null,desc:"+2 daño por herida recibida. Ignora armadura. Drawback: -1d6 Vitalidad al activar."},
+      {name:"Seeing Red",type:"Heroica",cost:"4 Aen",dmg:null,desc:"Daño doble 2 rondas. Atacas al más cercano, aliado o enemigo. Drawback: -1d10 Vitalidad al terminar."}
+    ]},
+    {id:"colossus",name:"Colossus",desc:"Tormenta que camina. Presencia imparable.",
      abilities:[
-      {name:"Pisotón Sísmico",type:"Base",cost:"3 Aen",dmg:"7",desc:"Derriba a todos en radio 2. Daño adicional a derribados. Drawback: -1d4 Aen."},
-      {name:"Forma Gigante",type:"Heroica",cost:"4 Aen",dmg:"12",desc:"Creces enormemente. Daño x1.5 por 2 turnos. Drawback: -1d8 HP al terminar."}
-     ]},
-    {id:"voivode",name:"Voivode",desc:"Guerrero-Príncipe. Autoridad en la batalla.",
+      {name:"Earthquake",type:"Base",cost:"3 Aen",dmg:"5",desc:"Área radio 3. Derriba e inmoviliza 1 ronda. Drawback: no puedes moverte siguiente turno."},
+      {name:"Eye of the Storm",type:"Heroica",cost:"4 Aen",dmg:"10",desc:"Daño a todos en radio 4. Derribados + aturdidos 2 rondas. Drawback: -1d10 Vitalidad al activar."}
+    ]},
+    {id:"voivode",name:"Voivode",desc:"Líder agresivo. Su furia contagia al grupo.",
      abilities:[
-      {name:"Grito de Mando",type:"Base",cost:"3 Aen",dmg:"4",desc:"Tu ataque + todos los aliados en radio 3 atacan con ventaja. Drawback: -1d4 Aen."},
-      {name:"Dominio Absoluto",type:"Heroica",cost:"4 Aen",dmg:"10",desc:"Controlas los movimientos de un enemigo por 1 turno. Drawback: -1d8 Vitalidad."}
-     ]}
-   ]},
+      {name:"War Cry",type:"Base",cost:"3 Aen",dmg:null,desc:"Aliados radio 3 ganan +4 daño y +1 Aen 2 rondas. Drawback: -1d6 Vitalidad al activar."},
+      {name:"To The Last",type:"Heroica",cost:"4 Aen",dmg:null,desc:"Aliados recuperan 10 Vitalidad y se liberan de condiciones. Drawback: -1d10 Vitalidad, incapacitado 1 ronda."}
+    ]}
+  ]},
 
+  /* ── KNIGHT ── */
   {id:"knight",name:"Knight",nameEs:"Caballero",type:"Fuerza",resource:"DEVOTION",
    abilities:[
-    {name:"Protección Escudada",type:"Base",cost:"2 Aen",dmg:null,desc:"Reduces daño recibido en 2. Aliados adyacentes reciben -1 daño."},
-    {name:"Golpe Justiciero",type:"Base",cost:"2 Aen",dmg:"6",desc:"Ataque que ignora 2 de defensa enemiga."},
-    {name:"Último Aliento",type:"Heroica",cost:"3 Aen",dmg:"8",desc:"Si estás a menos de 25% HP, tu próximo ataque causa daño doble y no te cansa. Drawback: pierdes 1d8 HP al terminar."}
+    {name:"Oathstrike",type:"Base",cost:"2 Aen",dmg:"5",desc:"Golpe preciso guiado por tu juramento. Ignora armadura, desarma al impactar."},
+    {name:"Hold the Line",type:"Base",cost:"2 Aen",dmg:null,desc:"Plantas posición. Bloqueas movimiento enemigo radio 2, reduces daño recibido a la mitad."},
+    {name:"Sworn Duty",type:"Heroica",cost:"3 Aen",dmg:"8",desc:"Doble ataque garantizado 2 rondas. Drawback: -1d8 Vitalidad al terminar."}
    ],
    subclasses:[
-    {id:"inquisitor",name:"Inquisitor",desc:"Cazador de oscuridad. Enemigo de lo arcano.",
+    {id:"inquisitor",name:"Inquisitor",desc:"Cazador de herejes. Juzga y ejecuta.",
      abilities:[
-      {name:"Destello Sagrado",type:"Base",cost:"3 Aen",dmg:"7",desc:"Ataque que desmorona hechizos. Cancela habilidades mágicas del enemigo por 1 turno. Drawback: -1d4 Aen."},
-      {name:"Juicio Divino",type:"Heroica",cost:"4 Aen",dmg:"13",desc:"Ataque cuerpo a cuerpo contra objetivo mágico. Daño doble. Drawback: -1d8 Vitalidad."}
-     ]},
-    {id:"protector",name:"Protector",desc:"Escudo viviente. Absorbe daño.",
+      {name:"Marked for Judgment",type:"Base",cost:"3 Aen",dmg:"4",desc:"Marca al objetivo: +3 daño acumulativo por ataque. Drawback: -1d6 Aen al activar."},
+      {name:"Final Verdict",type:"Heroica",cost:"4 Aen",dmg:"15",desc:"Si marcado: daño x2. Ejecuta si no es jefe. Drawback: -1d10 Vitalidad al terminar."}
+    ]},
+    {id:"protector",name:"Protector",desc:"Escudo humano. Da su cuerpo por los demás.",
      abilities:[
-      {name:"Escudo de Hermanos",type:"Base",cost:"3 Aen",dmg:null,desc:"Proteges a un aliado. Compartes su daño por 2 turnos. Drawback: -1d4 Aen."},
-      {name:"Último Sacrificio",type:"Heroica",cost:"4 Aen",dmg:null,desc:"Absorbes TODO el daño que un aliado recibiría por 1 turno. Drawback: -1d10 HP."}
-     ]},
-    {id:"martyr",name:"Martyr",desc:"El dolor es purificación. Sufrimiento = poder.",
+      {name:"Take the Hit",type:"Base",cost:"3 Aen",dmg:null,desc:"Rediriges daño de un aliado radio 3 hacia ti, reducido a la mitad. Drawback: -1d6 Vitalidad al activar."},
+      {name:"Aegis",type:"Heroica",cost:"4 Aen",dmg:null,desc:"Todos los aliados inmunes al daño 1 ronda. Drawback: -1d10 Vitalidad, inmovilizado 1 ronda."}
+    ]},
+    {id:"martyr",name:"Martyr",desc:"Se sacrifica. Da todo por el grupo.",
      abilities:[
-      {name:"Dolor Transformado",type:"Base",cost:"3 Aen",dmg:"6",desc:"Por cada 5 daño que hayas tomado hoy, +1 daño en este ataque. Drawback: -1d4 Aen."},
-      {name:"Apoteosis de Sufrimiento",type:"Heroica",cost:"4 Aen",dmg:"16",desc:"Cuanto más herido estés, más fuerte golpeas. Daño = (mitad de HP perdido) + base. Drawback: -1d8 Vitalidad."}
-     ]}
-   ]},
+      {name:"Blood Oath",type:"Base",cost:"3 Aen",dmg:null,desc:"Aliado gana +5 daño y +2 Aen 2 rondas. Drawback: -1d8 Vitalidad al activar."},
+      {name:"Last Sacrifice",type:"Heroica",cost:"4 Aen",dmg:null,desc:"Todos los aliados recuperan toda la Vitalidad y se liberan de condiciones. Drawback: -1d12 Vitalidad (puedes caer a 0)."}
+    ]}
+  ]},
 
+  /* ── MONK ── */
   {id:"monk",name:"Monk",nameEs:"Monje",type:"Fuerza",resource:"CLARITY",
    abilities:[
-    {name:"Golpe de Precisión",type:"Base",cost:"2 Aen",dmg:"4",desc:"Ataque cuerpo a cuerpo. Ignora 1 de resistencia."},
-    {name:"Equilibrio Mental",type:"Base",cost:"2 Aen",dmg:null,desc:"Ganas +2 en defensa y +1 movimiento por 1 turno."},
-    {name:"Éxtasis de Batalla",type:"Heroica",cost:"3 Aen",dmg:"7",desc:"Haces dos ataques con ventaja. Ignoras dolor. Drawback: -1d6 Aen al terminar."}
+    {name:"Flowing Strike",type:"Base",cost:"2 Aen",dmg:"4",desc:"Golpea y muévete 2 casillas sin provocar reacciones."},
+    {name:"Deflect",type:"Base",cost:"2 Aen",dmg:null,desc:"Anulas un ataque y devuelves la mitad del daño."},
+    {name:"Inner Flow",type:"Heroica",cost:"3 Aen",dmg:"6",desc:"Acción extra cada ronda 2 rondas. Esquivas primer ataque. Drawback: -1d8 Aen al terminar."}
    ],
    subclasses:[
-    {id:"martial_artist",name:"Martial Artist",desc:"Cuerpo como arma. Técnica pura.",
+    {id:"martial_artist",name:"Martial Artist",desc:"Puño puro. Técnica y combos perfectos.",
      abilities:[
-      {name:"Combo Certero",type:"Base",cost:"3 Aen",dmg:"6",desc:"Tres ataques rápidos de 2 daño cada uno. Drawback: -1d4 Aen."},
-      {name:"Transcendencia Marcial",type:"Heroica",cost:"4 Aen",dmg:"12",desc:"Atacas 4 veces. Cada golpe es crítico si el anterior golpeó. Drawback: -1d8 Aen."}
-     ]},
-    {id:"void_monk",name:"Void",desc:"El vacío interior. Destrucción silenciosa.",
+      {name:"Perfect Form",type:"Base",cost:"3 Aen",dmg:"6",desc:"Cada golpe consecutivo al mismo objetivo +2 daño. Drawback: -1d6 Aen al activar."},
+      {name:"Thousand Strikes",type:"Heroica",cost:"4 Aen",dmg:"12",desc:"Golpea hasta 5 veces. Cada impacto reduce armadura. Drawback: -1d10 Vitalidad al terminar."}
+    ]},
+    {id:"void",name:"Void",desc:"Vacío interior. Corrompe y drena esencia.",
      abilities:[
-      {name:"Toque del Vacío",type:"Base",cost:"3 Aen",dmg:"8",desc:"Ignoras toda defensa y resistencia. El daño es verdadero. Drawback: -1d4 Aen."},
-      {name:"Colapso de Realidad",type:"Heroica",cost:"4 Aen",dmg:"14",desc:"Ataque que deforma el espacio. Radio 3. Todos toman daño. Drawback: -1d8 HP."}
-     ]}
-   ]},
+      {name:"Void Touch",type:"Base",cost:"3 Aen",dmg:"5",desc:"Robas 2 Aen al objetivo y lo desconcentras. Drawback: -1d6 Vitalidad al activar."},
+      {name:"The Empty",type:"Heroica",cost:"4 Aen",dmg:"8",desc:"Drenas Aen de todos en radio 3. Incapacitas 1 ronda. Drawback: -1d10 Vitalidad al terminar."}
+    ]}
+  ]},
 
+  /* ── SHADOW ── */
   {id:"shadow",name:"Shadow",nameEs:"Sombra",type:"Fuerza",resource:"AEN",
    abilities:[
-    {name:"Puñalada de las Sombras",type:"Base",cost:"2 Aen",dmg:"6",desc:"Ataque desde Invisible o en oscuridad. Daño doble."},
-    {name:"Desvanecimiento",type:"Base",cost:"2 Aen",dmg:null,desc:"Te vuelves Invisible por 1 turno si no atacas."},
-    {name:"Danza Mortal",type:"Heroica",cost:"3 Aen",dmg:"9",desc:"Te mueves hasta 10 metros y atacas. Repetible si cada ataque golpea. Drawback: -1d6 Aen al terminar."}
+    {name:"Backstab",type:"Base",cost:"2 Aen",dmg:"7",desc:"Si el objetivo no te ve, daño x2."},
+    {name:"Vanish",type:"Base",cost:"2 Aen",dmg:null,desc:"Te vuelves invisible 1 ronda. Mueve 4 casillas."},
+    {name:"Death Mark",type:"Heroica",cost:"3 Aen",dmg:"12",desc:"Teletransporte al objetivo + golpe garantizado. Drawback: -1d8 Aen al terminar."}
    ],
    subclasses:[
-    {id:"raven",name:"Raven",desc:"Mensajero oscuro. Muerte desde arriba.",
+    {id:"raven",name:"Raven",desc:"Depredador. Marca a su presa y la elimina.",
      abilities:[
-      {name:"Ataque Aéreo",type:"Base",cost:"3 Aen",dmg:"7",desc:"Vuelas hasta 8 metros y atacas con ventaja. Drawback: -1d4 Aen."},
-      {name:"Lluvia de Cuchillas",type:"Heroica",cost:"4 Aen",dmg:"11",desc:"Invocas cuchillas que golpean radio 4. Daño a todos. Drawback: -1d8 Aen."}
-     ]},
-    {id:"phantom",name:"Phantom",desc:"Ni vivo ni muerto. Entre planos.",
+      {name:"Mark the Prey",type:"Base",cost:"3 Aen",dmg:"4",desc:"Objetivo marcado recibe +4 daño de todos 3 rondas. Drawback: -1d6 Aen al activar."},
+      {name:"Eternal Night",type:"Heroica",cost:"4 Aen",dmg:"10",desc:"Invisible 3 rondas. Cada ataque desde invisibilidad daño x2. Drawback: -1d10 Vitalidad al terminar."}
+    ]},
+    {id:"phantom",name:"Phantom",desc:"Engaño, veneno y desaparición.",
      abilities:[
-      {name:"Fase Espectral",type:"Base",cost:"3 Aen",dmg:"6",desc:"Te vuelves intangible. Traspasas muros. Daño reducido 50%. Dura 1 turno. Drawback: -1d4 Aen."},
-      {name:"Manifestación Fantasmal",type:"Heroica",cost:"4 Aen",dmg:"13",desc:"Atacas 2 veces. Un ataque es verdadero (daño normal), otro es espectral (daño reducido 50% pero ignora defensa). Drawback: -1d8 Aen."}
-     ]}
-   ]},
+      {name:"Ghost Step",type:"Base",cost:"3 Aen",dmg:"3",desc:"Veneno: 3 daño por ronda 3 rondas. Ignora armadura. Drawback: -1d6 Aen al activar."},
+      {name:"Fade to Nothing",type:"Heroica",cost:"4 Aen",dmg:null,desc:"Inmune a todo daño 2 rondas. Atraviesas enemigos y muros. Drawback: -1d10 Vitalidad al terminar."}
+    ]}
+  ]},
 
+  /* ── ARCHER ── */
   {id:"archer",name:"Archer",nameEs:"Arquero",type:"Fuerza",resource:"FOCUS",
    abilities:[
-    {name:"Disparo Preciso",type:"Base",cost:"2 Aen",dmg:"5",desc:"Ataque a distancia. Ventaja si el objetivo está Derribado."},
-    {name:"Lluvia de Flechas",type:"Base",cost:"2 Aen",dmg:"3",desc:"Radio 3. Todos en el área toman 3 daño."},
-    {name:"Tiro Mortal",type:"Heroica",cost:"3 Aen",dmg:"12",desc:"Apuntas durante 1 turno. Tu siguiente ataque es crítico automático. Drawback: no puedes atacar el turno previo."}
+    {name:"Piercing Shot",type:"Base",cost:"2 Aen",dmg:"5",desc:"Atraviesa todos los enemigos en línea recta."},
+    {name:"Suppressing Fire",type:"Base",cost:"2 Aen",dmg:"3",desc:"Zona radio 2 vuelve terreno difícil. Ralentiza a quien entre."},
+    {name:"Arrow Storm",type:"Heroica",cost:"3 Aen",dmg:"8",desc:"Daño a todos los enemigos visibles 2 rondas. Drawback: -1d8 Aen al terminar."}
    ],
    subclasses:[
-    {id:"sniper",name:"Sniper",desc:"Un tiro, una muerte.",
+    {id:"sniper",name:"Sniper",desc:"Un solo tiro. Paciencia letal.",
      abilities:[
-      {name:"Disparo Silencioso",type:"Base",cost:"3 Aen",dmg:"9",desc:"A distancia larga. El enemigo no sabe de dónde vienes. Ventaja. Drawback: -1d4 Aen."},
-      {name:"Eliminación Doble",type:"Heroica",cost:"4 Aen",dmg:"15",desc:"Disparas dos veces a dos objetivos distintos. Ambos son críticos. Drawback: -1d8 Aen."}
-     ]},
-    {id:"hunter",name:"Hunter",desc:"Rastreador. El bosque es su aliado.",
+      {name:"Steady Aim",type:"Base",cost:"3 Aen",dmg:"6",desc:"+5 daño por ronda sin moverte (máx 3). Drawback: no puedes moverte mientras cargas."},
+      {name:"One Shot",type:"Heroica",cost:"4 Aen",dmg:"20",desc:"Impacto garantizado. Ignora armadura. Ejecuta si no es jefe. Drawback: -1d10 Aen al terminar."}
+    ]},
+    {id:"hunter",name:"Hunter",desc:"Trampas y rastreo. El campo es su territorio.",
      abilities:[
-      {name:"Disparo de Rastreo",type:"Base",cost:"3 Aen",dmg:"7",desc:"Rastreas a una presa. Obtienes su localización. Siguiente ataque tiene ventaja. Drawback: -1d4 Aen."},
-      {name:"Emboscada Perfecta",type:"Heroica",cost:"4 Aen",dmg:"14",desc:"Atacas desde la naturaleza con daño triple. El enemigo no puede verte. Drawback: -1d8 Aen."}
-     ]}
-   ]},
+      {name:"Set the Trap",type:"Base",cost:"3 Aen",dmg:"5",desc:"Trampa: inmoviliza 2 rondas al primero que entre. Drawback: -1d6 Aen al activar."},
+      {name:"The Hunt",type:"Heroica",cost:"4 Aen",dmg:"10",desc:"Todos marcados e inmovilizados 1 ronda. +5 daño contra ellos. Drawback: -1d10 Vitalidad al terminar."}
+    ]}
+  ]},
 
+  /* ── WIZARD ── */
   {id:"wizard",name:"Wizard",nameEs:"Mago",type:"Magia",resource:"RESONANCE",
    abilities:[
-    {name:"Rayo Arcano",type:"Base",cost:"2 Aen",dmg:"6",desc:"Proyectil mágico a distancia. Ignora resistencia no-mágica."},
-    {name:"Escudo Arcano",type:"Base",cost:"2 Aen",dmg:null,desc:"Reduces daño en 2 por 1 turno."},
-    {name:"Explosión de Poder",type:"Heroica",cost:"3 Aen",dmg:"10",desc:"Radio 3. Todos toman daño. Terreno se convierte en difícil. Drawback: -1d8 Aen al terminar."}
+    {name:"Arcane Bolt",type:"Base",cost:"2 Aen",dmg:"6",desc:"Proyectil de energía pura. Ignora armadura. Alcance ilimitado."},
+    {name:"Rune Trap",type:"Base",cost:"2 Aen",dmg:"5",desc:"Runa que explota en radio 2 al ser pisada."},
+    {name:"Rewrite",type:"Heroica",cost:"3 Aen",dmg:null,desc:"Deshaz la última acción de cualquier criatura. Repite tu turno. Drawback: -1d8 Aen al terminar."}
    ],
    subclasses:[
-    {id:"battle_mage",name:"Battle Mage",desc:"Hechicero en primera línea.",
+    {id:"battle_mage",name:"Battle Mage",desc:"Magia y combate fusionados. Espada y hechizo.",
      abilities:[
-      {name:"Cuchilla de Energía",type:"Base",cost:"3 Aen",dmg:"8",desc:"Cuerpo a cuerpo mágico. Ignora armadura. Drawback: -1d4 Aen."},
-      {name:"Implosión Mágica",type:"Heroica",cost:"4 Aen",dmg:"13",desc:"Ataque cuerpo a cuerpo que drena magia. Recuperas Aen = daño hecho / 2. Drawback: -1d8 Vitalidad."}
-     ]},
-    {id:"elementalist",name:"Elementalist",desc:"Control de fuerzas naturales.",
+      {name:"Spellblade",type:"Base",cost:"3 Aen",dmg:"7",desc:"Ataques cuerpo a cuerpo +1d6 daño arcano 3 rondas. Drawback: -1d6 Aen al activar."},
+      {name:"Arcane Surge",type:"Heroica",cost:"4 Aen",dmg:"14",desc:"Daño en radio 3 alrededor tuyo. Derriba. Drawback: -1d10 Vitalidad al terminar."}
+    ]},
+    {id:"elementalist",name:"Elementalist",desc:"Dominio de los elementos. Fuego, hielo, rayo.",
      abilities:[
-      {name:"Ataque Elemental",type:"Base",cost:"3 Aen",dmg:"7",desc:"Elige: Fuego, Hielo o Rayo. Efecto especial (Ardiendo/Congelado/Paralizado). Drawback: -1d4 Aen."},
-      {name:"Tormenta Elemental",type:"Heroica",cost:"4 Aen",dmg:"12",desc:"Radio 4. Todos toman daño mixto. Uno de cada tipo de condición ocurre. Drawback: -1d8 Aen."}
-     ]},
-    {id:"chrono",name:"Chrono",desc:"Dominio del tiempo.",
+      {name:"Elemental Burst",type:"Base",cost:"3 Aen",dmg:"6",desc:"Elige: Fuego (quema 2 rondas), hielo (congela), o rayo (atraviesa). Drawback: -1d6 Aen al activar."},
+      {name:"Cataclysm",type:"Heroica",cost:"4 Aen",dmg:"16",desc:"Daño masivo radio 4. Quema + congela + aturde. Drawback: -1d10 Aen al terminar."}
+    ]},
+    {id:"chronomancer",name:"Chronomancer",desc:"Manipula el tiempo. Acelera, detiene, retrocede.",
      abilities:[
-      {name:"Retraso Temporal",type:"Base",cost:"3 Aen",dmg:"6",desc:"Un enemigo pierde su siguiente turno. Drawback: -1d4 Aen."},
-      {name:"Colapso Temporal",type:"Heroica",cost:"4 Aen",dmg:"11",desc:"Todos los enemigos en radio 3 pierden acciones por 1 turno. Drawback: -1d8 HP."}
-     ]}
-   ]},
+      {name:"Haste",type:"Base",cost:"3 Aen",dmg:null,desc:"Objetivo gana acción extra 2 rondas. Drawback: -1d6 Aen al activar."},
+      {name:"Time Stop",type:"Heroica",cost:"4 Aen",dmg:null,desc:"2 turnos completos seguidos. Enemigos congelados. Drawback: -1d12 Aen al terminar."}
+    ]}
+  ]},
 
+  /* ── DRUID ── */
   {id:"druid",name:"Druid",nameEs:"Druida",type:"Magia",resource:"ESSENCE",
    abilities:[
-    {name:"Proyectil Natural",type:"Base",cost:"2 Aen",dmg:"5",desc:"Espinas, piedras, fuego. Ataque a distancia."},
-    {name:"Crecimiento Vital",type:"Base",cost:"2 Aen",dmg:null,desc:"Un aliado recupera 5 HP. Duración: instantáneo."},
-    {name:"Colapso de Raíces",type:"Heroica",cost:"3 Aen",dmg:"8",desc:"Radio 3. Inmoviliza a todos. Daño por cada turno que no se muevan. Drawback: -1d8 Aen al terminar."}
+    {name:"Healing Bloom",type:"Base",cost:"2 Aen",dmg:null,desc:"Aliado recupera 6 Vitalidad."},
+    {name:"Entangle",type:"Base",cost:"2 Aen",dmg:"3",desc:"Raíces inmovilizan a todos en radio 2 por 2 rondas."},
+    {name:"Wild Shape",type:"Heroica",cost:"3 Aen",dmg:"10",desc:"Forma bestia: +10 Vitalidad, daño melee aumentado 3 rondas. Drawback: -1d8 Aen al terminar."}
    ],
    subclasses:[
-    {id:"shaman",name:"Shaman",desc:"Chamán tribal. Espíritus y ancestros.",
+    {id:"shaman",name:"Shaman",desc:"Sanación y purificación. La tierra lo cura todo.",
      abilities:[
-      {name:"Invocación de Espíritus",type:"Base",cost:"3 Aen",dmg:"6",desc:"Invocar espíritu que ataca por ti por 1 turno. Daño igual al tuyo. Drawback: -1d4 Aen."},
-      {name:"Posesión Espiritual",type:"Heroica",cost:"4 Aen",dmg:"10",desc:"Entras en el cuerpo de un aliado por 1 turno. Atacas con su cuerpo. Daño aumentado. Drawback: -1d8 Vitalidad."}
-     ]},
-    {id:"beast_master",name:"Beast Master",desc:"Hermano de bestias.",
+      {name:"Purify",type:"Base",cost:"3 Aen",dmg:null,desc:"Aliado se libera de todas las condiciones y recupera 4 Vitalidad. Drawback: -1d6 Aen al activar."},
+      {name:"Spirit Guardian",type:"Heroica",cost:"4 Aen",dmg:null,desc:"Aliados recuperan 8 Vitalidad por ronda 3 rondas. Drawback: -1d10 Aen al terminar."}
+    ]},
+    {id:"beast_master",name:"Beast Master",desc:"Compañero animal. La naturaleza pelea a su lado.",
      abilities:[
-      {name:"Llamada Bestial",type:"Base",cost:"3 Aen",dmg:"7",desc:"Invocas una bestia que lucha por 2 turnos. Ataque 1d6. Drawback: -1d4 Aen."},
-      {name:"Fusión Animal",type:"Heroica",cost:"4 Aen",dmg:"12",desc:"Te transformas en bestia. Daño x1.5. 3 turnos. Drawback: -1d8 Vitalidad al terminar."}
-     ]}
-   ]},
+      {name:"Call Companion",type:"Base",cost:"3 Aen",dmg:"5",desc:"Compañero ataca por separado, comparte tu turno. Drawback: -1d6 Aen al activar."},
+      {name:"The Pack",type:"Heroica",cost:"4 Aen",dmg:"4x3",desc:"3 bestias atacan 4 daño cada una. Rodean y derriban. Drawback: -1d10 Aen al terminar."}
+    ]}
+  ]},
 
+  /* ── WARLOCK ── */
   {id:"warlock",name:"Warlock",nameEs:"Brujo",type:"Magia",resource:"PACT",
    abilities:[
-    {name:"Toque de Perdición",type:"Base",cost:"2 Aen",dmg:"6",desc:"Cuerpo a cuerpo mágico. Causa Envenenado."},
-    {name:"Maldición de Debilidad",type:"Base",cost:"2 Aen",dmg:null,desc:"Enemigo pierde 2 daño en sus ataques por 1 turno."},
-    {name:"Invocar Abismo",type:"Heroica",cost:"3 Aen",dmg:"9",desc:"Invocas poder oscuro. Radio 3. Todos Asustados y toman daño. Drawback: -1d10 Aen al terminar."}
+    {name:"Chaos Bolt",type:"Base",cost:"2 Aen",dmg:"7",desc:"Daño aleatorio +1d6. Puede rebotar a otro enemigo."},
+    {name:"Hex",type:"Base",cost:"2 Aen",dmg:null,desc:"Objetivo recibe +3 daño de todo y falla su próxima acción."},
+    {name:"Unleash the Pact",type:"Heroica",cost:"3 Aen",dmg:"14",desc:"Daño masivo radio 3. Caos: efectos aleatorios. Drawback: -1d10 Vitalidad al terminar."}
    ],
    subclasses:[
-    {id:"necromancer",name:"Necromancer",desc:"Maestro de muertos.",
+    {id:"necromancer",name:"Necromancer",desc:"Muerte y no-muertos. El fin es solo el principio.",
      abilities:[
-      {name:"Resurrección Menor",type:"Base",cost:"3 Aen",dmg:"5",desc:"Invocas esqueleto que lucha por 2 turnos. Daño 1d4. Drawback: -1d4 Aen."},
-      {name:"Tormenta de Huesos",type:"Heroica",cost:"4 Aen",dmg:"11",desc:"Radio 4. Esqueletos atacan a todos. Daño total 3d6. Drawback: -1d8 Vitalidad."}
-     ]},
-    {id:"illrigger",name:"Illrigger",desc:"Hechicero de engaño.",
+      {name:"Raise Dead",type:"Base",cost:"3 Aen",dmg:"4",desc:"Invoca esqueleto: 4 daño, dura hasta morir. Drawback: -1d6 Vitalidad al activar."},
+      {name:"Army of the Dead",type:"Heroica",cost:"4 Aen",dmg:"3x4",desc:"4 no-muertos, cada uno 3 daño. Abruman al enemigo. Drawback: -1d10 Vitalidad al terminar."}
+    ]},
+    {id:"illrigger",name:"Illrigger",desc:"Hex y maldiciones. Caos hecho manifiesto.",
      abilities:[
-      {name:"Ilusión de Tormento",type:"Base",cost:"3 Aen",dmg:"7",desc:"Enemigo Asustado. Tiene desventaja en ataques. Dura 1 turno. Drawback: -1d4 Aen."},
-      {name:"Laberinto Mental",type:"Heroica",cost:"4 Aen",dmg:null,desc:"Radio 3. Todos se pierden en ilusiones. No pueden atacarte por 1 turno. Drawback: -1d8 Aen."}
-     ]},
-    {id:"heretic",name:"Heretic",desc:"Apostata mágico.",
+      {name:"Doom Brand",type:"Base",cost:"3 Aen",dmg:"5",desc:"Maldición: +2 daño por ronda. Explota al morir. Drawback: -1d6 Aen al activar."},
+      {name:"Chains of Chaos",type:"Heroica",cost:"4 Aen",dmg:"8",desc:"Enemigos comparten daño recibido 3 rondas. Drawback: -1d10 Vitalidad al terminar."}
+    ]},
+    {id:"heretic",name:"Heretic",desc:"Rechaza el orden. Abraza lo prohibido.",
      abilities:[
-      {name:"Robo de Fe",type:"Base",cost:"3 Aen",dmg:"8",desc:"Robas magia del enemigo. Ganas 1 Aen adicional. Drawback: -1d4 Aen."},
-      {name:"Impugnación Total",type:"Heroica",cost:"4 Aen",dmg:"12",desc:"Todos los hechizos enemigos en radio 4 se disipen. Ganas Aen de cada uno. Drawback: -1d8 Vitalidad."}
-     ]}
-   ]},
+      {name:"Forbidden Knowledge",type:"Base",cost:"3 Aen",dmg:"8",desc:"Copia la última habilidad usada por cualquier criatura. Drawback: -1d8 Vitalidad al activar."},
+      {name:"Unbound Chaos",type:"Heroica",cost:"4 Aen",dmg:"18",desc:"Daño devastador radio 5. Ignora todo. Incontrolable. Drawback: -1d12 Vitalidad (afecta aliados cercanos)."}
+    ]}
+  ]},
 
+  /* ── INVENTOR ── */
   {id:"inventor",name:"Inventor",nameEs:"Inventor",type:"Fuerza",resource:"INGENUITY",
    abilities:[
     {name:"Turret",type:"Base",cost:"2 Aen",dmg:"4",desc:"Torreta dispara 4 daño por ronda. Dura 3 rondas."},
@@ -328,14 +332,15 @@ classes: [
      abilities:[
       {name:"Demolition Charge",type:"Base",cost:"3 Aen",dmg:"8",desc:"Explota radio 3. Destruye coberturas y terreno. Drawback: -1d6 Aen al activar."},
       {name:"Carpet Bomb",type:"Heroica",cost:"4 Aen",dmg:"16",desc:"Daño radio 5. Derriba a todos. Terreno difícil permanente. Drawback: -1d10 Vitalidad al terminar."}
-     ]},
+    ]},
     {id:"cyborg",name:"Cyborg",desc:"Se modifica a sí mismo. Cuerpo como artefacto.",
      abilities:[
       {name:"Augment",type:"Base",cost:"3 Aen",dmg:"5",desc:"+5 Vitalidad, +2 daño melee, +2 mov 3 rondas. Drawback: -1d6 Aen al activar."},
       {name:"Machine Mode",type:"Heroica",cost:"4 Aen",dmg:"12",desc:"Inmune a condiciones. Acción extra. Daño melee x2 2 rondas. Drawback: -1d10 Vitalidad al terminar."}
-     ]}
-   ]},
+    ]}
+  ]},
 
+  /* ── BARD ── */
   {id:"bard",name:"Bard",nameEs:"Bardo",type:"Fuerza",resource:"INSPIRATION",
    abilities:[
     {name:"Inspire",type:"Base",cost:"2 Aen",dmg:null,desc:"Aliado gana +1d6 a próxima acción y +3 daño."},
@@ -347,17 +352,17 @@ classes: [
      abilities:[
       {name:"War Song",type:"Base",cost:"3 Aen",dmg:"4",desc:"Aliados radio 3: +4 daño, resisten condiciones 3 rondas. Drawback: -1d6 Aen al activar."},
       {name:"Battle Hymn",type:"Heroica",cost:"4 Aen",dmg:null,desc:"Aliados: daño x2 y +1 acción 2 rondas. Drawback: -1d10 Vitalidad al terminar."}
-     ]},
+    ]},
     {id:"spy",name:"Spy",desc:"Disfraz, imitación, manipulación. Nunca es quien parece.",
      abilities:[
       {name:"Disguise",type:"Base",cost:"3 Aen",dmg:null,desc:"Te haces pasar por enemigo: ignoran tu presencia 2 rondas. Drawback: -1d6 Aen al activar."},
       {name:"The Long Con",type:"Heroica",cost:"4 Aen",dmg:"10",desc:"Controlas a un enemigo 2 rondas. Robas sus habilidades. Drawback: -1d10 Vitalidad al terminar."}
-     ]}
-   ]}
+    ]}
+  ]}
 ],
 
 /* ══════════════════════════════════════════════
-   KITS (15)
+   KITS (15 Avelir)
    ══════════════════════════════════════════════ */
 kits: [
   {id:"asalto",name:"Asalto",fantasy:"Vikingo",archetype:"Tanque agresivo",hpBonus:8,aenBonus:0,
@@ -394,11 +399,13 @@ kits: [
 
 };
 
+
 /* ══════════════════════════════════════════════
    BESTIARIO BASE — 30 criaturas (6 existentes + 24 nuevas)
+   Organizadas por roles tácticos
    ══════════════════════════════════════════════ */
 GAMEDATA.baseBestiary = [
-  /* ─── EXISTENTES ─── */
+  /* ─── EXISTENTES (6) ─── */
   {id:"base-sombra",name:"Sombra de la Marca",type:"No-muerto",difficulty:"medium",hp:15,dmg:"4-8",resist:"Físico",terrain:["Bosque","Ruinas","Nocturno"],description:"Silueta humanoide envuelta en humo negro. Ojos de luz violeta. No habla, gruñe.",abilities:[{name:"Zarpazo Sombrío",type:"Acción",desc:"Cuerpo a cuerpo 4-8."},{name:"Toque Corrupto",type:"Acción",desc:"Al golpear, el objetivo pierde 1 Aen adicional."},{name:"Reformar",type:"Pasiva",desc:"Sin daño de fuego/luz, reaparece en 2 turnos con HP/2."}],lairSuggestions:["Niebla oscura se espesa","Sombra emerge de un cadáver"]},
   {id:"base-arana",name:"Araña del Velo",type:"Bestia",difficulty:"easy",hp:8,dmg:"2-5",resist:"Ninguno",terrain:["Cueva","Ruinas"],description:"Araña del tamaño de un perro. Patas translúcidas que parpadean entre planos.",abilities:[{name:"Mordisco Venenoso",type:"Acción",desc:"2-5 daño. Envenenado 1 turno."},{name:"Telaraña",type:"Acción",desc:"Inmoviliza 1 turno. Alcance 3."}],lairSuggestions:["Telarañas bloquean caminos"]},
   {id:"base-golem",name:"Golem de Runas",type:"Constructo",difficulty:"hard",hp:40,dmg:"8-14",resist:"Magia",terrain:["Ruinas","Templo"],description:"Figura humanoide de piedra con runas brillantes. Silencioso e implacable.",abilities:[{name:"Puño de Piedra",type:"Acción",desc:"8-14 daño. Derriba."},{name:"Absorber Aen",type:"Pasiva",desc:"Inmune a habilidades mágicas. Absorbe el Aen gastado contra él."},{name:"Explosión Rúnica",type:"Acción",desc:"Al morir, explota radio 2 por 10 daño."}],lairSuggestions:["Runas en el suelo brillan — terreno difícil"]},
