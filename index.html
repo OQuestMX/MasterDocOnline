@@ -522,6 +522,18 @@ textarea.form-input{min-height:70px;line-height:1.5}
 .hero-check.checked .hero-check-box{color:#fff}
 /* BASE TAGS */
 .base-tag{font-size:11px;color:var(--ink4);background:var(--surface2);padding:3px 8px;border-radius:var(--r);border:1px solid var(--border)}
+
+/* PREVIEW GROUP LABELS */
+.preview-group-label{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin:12px 0 4px 0;padding-top:8px;border-top:1px solid var(--border)}
+.faction-feat-block{background:var(--gold-pale);border-radius:var(--r);padding:12px;border:1px solid var(--gold)}
+/* BESTIARY FILTERS */
+.filter-bar{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);position:relative}
+.filter-group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.filter-cat-label{font-size:12px;font-weight:600;color:var(--ink3);margin-right:4px;min-width:70px}
+.filter-chip{font-size:12px;padding:5px 12px;border-radius:14px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--ink2);min-height:32px;display:inline-flex;align-items:center}
+.filter-chip:active{transform:scale(.96)}
+.filter-chip.active{background:var(--gold);color:#fff;border-color:var(--gold);font-weight:600}
+.filter-clear{font-size:12px;color:var(--red);cursor:pointer;align-self:flex-end;font-weight:600}
 </style>
 </head>
 <body>
@@ -1026,12 +1038,20 @@ seedIfEmpty();
 /* STATE */
 var currentView='campaign',selectedLibTab='npcs',selectedLibItem=null,selectedSceneId=null,selectedBeatIdx=0;
 var combat=null,expandedUnits={};
+var bestiaryFilters={difficulty:[],type:[],terrain:[]};
+var wizFilters={difficulty:[],type:[],terrain:[]};
 var G=(typeof GAMEDATA!=='undefined')?GAMEDATA:null;
 
 /* HELPERS */
 function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,4)}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function resolvePlayer(p){if(!p)return null;var cls=G?G.classes.find(function(c){return c.id===p.classId}):null;var sub=cls?cls.subclasses.find(function(s){return s.id===p.subclassId}):null;var kit=G?G.kits.find(function(k){return k.id===p.kitId}):null;var fac=G?G.factions.find(function(f){return f.id===p.factionId}):null;var ab=[];if(cls)cls.abilities.forEach(function(a){ab.push(a)});if(sub)sub.abilities.forEach(function(a){ab.push(a)});if(kit)ab.push({name:kit.ability.name,type:'Kit',desc:kit.ability.desc,cost:kit.ability.cost});return{id:p.id,name:p.name,initial:p.initial||p.name.charAt(0),bg:p.bg||'#444',fg:p.fg||'#fff',img:p.img||'',echo:p.echo||0,cls:cls?cls.nameEs:(p.classId||'?'),sub:sub?sub.name:'',kit:kit?kit.name:'',plano:p.plano||1,faction:fac?fac.name:(p.factionId||''),factionColor:fac?fac.color:'#666',hp:(G?G.rules.hpBase:10)+(kit?kit.hpBonus:0),aenRegen:(G?G.rules.aenPerTurn:2)+(kit?kit.aenBonus:0),abilities:ab,backstory:p.backstory||''}}
+function resolvePlayer(p){if(!p)return null;var cls=G?G.classes.find(function(c){return c.id===p.classId}):null;var sub=cls?cls.subclasses.find(function(s){return s.id===p.subclassId}):null;var kit=G?G.kits.find(function(k){return k.id===p.kitId}):null;var fac=G?G.factions.find(function(f){return f.id===p.factionId}):null;
+  var classAbilities=cls?cls.abilities.slice():[];
+  var subAbilities=sub?sub.abilities.slice():[];
+  var kitAbility=kit?{name:kit.ability.name,type:'Kit',desc:kit.ability.desc,cost:kit.ability.cost,drawback:kit.ability.drawback}:null;
+  var chosenFeat=(fac&&fac.feats&&p.featChosen!=null&&fac.feats[p.featChosen])?fac.feats[p.featChosen]:null;
+  var ab=classAbilities.concat(subAbilities);if(kitAbility)ab.push(kitAbility);
+  return{id:p.id,name:p.name,initial:p.initial||p.name.charAt(0),bg:p.bg||'#444',fg:p.fg||'#fff',img:p.img||'',echo:p.echo||0,cls:cls?cls.nameEs:(p.classId||'?'),clsType:cls?cls.type:'',resource:cls?cls.resource:'',sub:sub?sub.name:'',kit:kit?kit.name:'',plano:p.plano||1,faction:fac?fac.name:(p.factionId||''),factionColor:fac?fac.color:'#666',hp:(G?G.rules.hpBase:10)+(kit?kit.hpBonus:0),aenRegen:(G?G.rules.aenPerTurn:2)+(kit?kit.aenBonus:0),abilities:ab,classAbilities:classAbilities,subAbilities:subAbilities,kitAbility:kitAbility,chosenFeat:chosenFeat,backstory:p.backstory||''}}
 function hpColor(pct){if(pct>60)return'var(--green)';if(pct>25)return'var(--orange)';return'var(--red)'}
 function diffLabel(d){return{easy:'Fácil',medium:'Medio',hard:'Duro',boss:'Jefe'}[d]||d}
 function avatarHtml(p,size){var s=size||'';var st='background:'+(p.bg||'#444')+';color:'+(p.fg||'#fff')+';';if(p.img)return '<div class="avatar-img" style="background-image:url('+esc(p.img)+');'+s+'"></div>';return '<div class="sb-player" style="'+st+s+'">'+(p.initial||(p.name?p.name.charAt(0):'?'))+'</div>'}
@@ -1122,16 +1142,45 @@ function addBeat(){var camp=dbLoad('campaign');if(!camp)return;var name=prompt('
 function delBeat(idx){var camp=dbLoad('campaign');if(!camp)return;if(!confirm('¿Eliminar este beat? Las escenas quedarán sin asignar.'))return;camp.arcs[0].beats.splice(idx,1);dbSave('campaign',camp);if(selectedBeatIdx>=camp.arcs[0].beats.length)selectedBeatIdx=Math.max(0,camp.arcs[0].beats.length-1);renderCampaign()}
 
 /* LIBRARY */
+function allTerrains(){var set={};allCreatures().forEach(function(c){(c.terrain||[]).forEach(function(t){set[t]=true})});return Object.keys(set).sort()}
+function applyFilters(creatures,filters){return creatures.filter(function(c){
+  if(filters.difficulty.length&&filters.difficulty.indexOf(c.difficulty)===-1)return false;
+  if(filters.type.length&&filters.type.indexOf(c.type)===-1)return false;
+  if(filters.terrain.length){var has=(c.terrain||[]).some(function(t){return filters.terrain.indexOf(t)>-1});if(!has)return false}
+  return true;
+})}
+function toggleFilter(scope,cat,val){var f=scope==='lib'?bestiaryFilters:wizFilters;var i=f[cat].indexOf(val);if(i>-1)f[cat].splice(i,1);else f[cat].push(val);if(scope==='lib')renderLibrary();else renderSceneWizard()}
+function clearFilters(scope){var f=scope==='lib'?bestiaryFilters:wizFilters;f.difficulty=[];f.type=[];f.terrain=[];if(scope==='lib')renderLibrary();else renderSceneWizard()}
+function renderFilterChips(scope){
+  var f=scope==='lib'?bestiaryFilters:wizFilters;
+  var diffs=G?G.difficulties:[];
+  var types=G?G.creatureTypes:[];
+  var terrains=allTerrains();
+  var activeCount=f.difficulty.length+f.type.length+f.terrain.length;
+  var h='<div class="filter-bar">';
+  h+='<div class="filter-group"><span class="filter-cat-label">Dificultad:</span>';
+  diffs.forEach(function(d){h+='<span class="filter-chip'+(f.difficulty.indexOf(d.id)>-1?' active':'')+'" onclick="toggleFilter(\''+scope+'\',\'difficulty\',\''+d.id+'\')">'+esc(d.name)+'</span>'});
+  h+='</div>';
+  h+='<div class="filter-group"><span class="filter-cat-label">Tipo:</span>';
+  types.forEach(function(t){h+='<span class="filter-chip'+(f.type.indexOf(t)>-1?' active':'')+'" onclick="toggleFilter(\''+scope+'\',\'type\',\''+t+'\')">'+esc(t)+'</span>'});
+  h+='</div>';
+  if(terrains.length){h+='<div class="filter-group"><span class="filter-cat-label">Terreno:</span>';
+  terrains.forEach(function(t){h+='<span class="filter-chip'+(f.terrain.indexOf(t)>-1?' active':'')+'" onclick="toggleFilter(\''+scope+'\',\'terrain\',\''+esc(t).replace(/'/g,"")+'\')">'+esc(t)+'</span>'});
+  h+='</div>'}
+  if(activeCount)h+='<span class="filter-clear" onclick="clearFilters(\''+scope+'\')">Limpiar ('+activeCount+')</span>';
+  h+='</div>';
+  return h;
+}
 function libItems(tab){if(tab==='bestiary')return allCreatures();return dbGetAll(tab)}
 function libCount(tab){return libItems(tab).length}
-function renderLibrary(){var el=document.getElementById('library-content');if(!el)return;var tabs=[{id:'npcs',l:'NPCs'},{id:'villains',l:'Villanos'},{id:'bestiary',l:'Bestiario'},{id:'loot',l:'Loot'}];var h='<div class="section-label">BIBLIOTECA</div><div class="lib-category-tabs">';tabs.forEach(function(t){h+='<div class="lib-cat-tab'+(selectedLibTab===t.id?' active':'')+'" data-action="lib-tab" onclick="selectedLibTab=\''+t.id+'\';selectedLibItem=null;renderLibrary()">'+t.l+' <span class="tab-count">'+libCount(t.id)+'</span></div>'});h+='</div>';var tl={npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item'}[selectedLibTab];h+='<div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="'+selectedLibTab+'">+ Nuevo '+tl+'</button></div>';h+='<div class="library-layout"><div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar..." oninput="filterLib(this.value)"></div><div id="lib-items">';h+=renderLibList(libItems(selectedLibTab));h+='</div></div><div class="library-detail" id="lib-detail">';h+=selectedLibItem?renderLibDetail(selectedLibTab,selectedLibItem):'<div class="empty-state"><div class="empty-state-desc">Selecciona un item</div></div>';h+='</div></div>';el.innerHTML=h}
+function renderLibrary(){var el=document.getElementById('library-content');if(!el)return;var tabs=[{id:'npcs',l:'NPCs'},{id:'villains',l:'Villanos'},{id:'bestiary',l:'Bestiario'},{id:'loot',l:'Loot'}];var h='<div class="section-label">BIBLIOTECA</div><div class="lib-category-tabs">';tabs.forEach(function(t){h+='<div class="lib-cat-tab'+(selectedLibTab===t.id?' active':'')+'" data-action="lib-tab" onclick="selectedLibTab=\''+t.id+'\';selectedLibItem=null;renderLibrary()">'+t.l+' <span class="tab-count">'+libCount(t.id)+'</span></div>'});h+='</div>';var tl={npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item'}[selectedLibTab];h+='<div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="'+selectedLibTab+'">+ Nuevo '+tl+'</button></div>';h+=(selectedLibTab==='bestiary'?renderFilterChips('lib'):'');h+='<div class="library-layout"><div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar..." oninput="filterLib(this.value)"></div><div id="lib-items">';var libList=libItems(selectedLibTab);if(selectedLibTab==='bestiary')libList=applyFilters(libList,bestiaryFilters);h+=renderLibList(libList);h+='</div></div><div class="library-detail" id="lib-detail">';h+=selectedLibItem?renderLibDetail(selectedLibTab,selectedLibItem):'<div class="empty-state"><div class="empty-state-desc">Selecciona un item</div></div>';h+='</div></div>';el.innerHTML=h}
 function renderLibList(items){if(!items.length)return'<div class="empty-state"><div class="empty-state-desc">Vacío. Crea el primero.</div></div>';var h='';items.forEach(function(item){h+='<div class="entity-list-item'+(selectedLibItem===item.id?' selected':'')+'" data-action="select-lib" data-id="'+item.id+'"><div><div style="font-size:14px;font-weight:600">'+esc(item.name)+(item._base?' <span class="base-lock" title="Del gamedata base">🔒</span>':'')+'</div>';if(item.role)h+='<div style="font-size:12px;color:var(--ink3)">'+esc(item.role)+'</div>';if(item.type&&!item.role)h+='<div style="font-size:12px;color:var(--ink3)">'+esc(item.type)+(item.difficulty?' · '+diffLabel(item.difficulty):'')+'</div>';h+='</div>'+(item._base?'<span class="base-tag">base</span>':'<button class="delete-btn" data-action="delete-item" data-type="'+selectedLibTab+'" data-id="'+item.id+'" title="Eliminar">×</button>')+'</div>'});return h}
 function renderLibDetail(table,id){var item=table==='bestiary'?getCreatureById(id):dbGetById(table,id);if(!item)return'';var h='<div style="display:flex;justify-content:space-between;align-items:start"><div class="detail-header"><div class="detail-name">'+esc(item.name)+'</div>';if(item.role)h+='<div class="detail-role">'+esc(item.role)+'</div>';if(item.type&&table==='bestiary')h+='<div class="detail-role">'+esc(item.type)+' · <span class="difficulty-tag diff-'+(item.difficulty||'medium')+'">'+diffLabel(item.difficulty)+'</span></div>';h+='</div>'+(item._base?'<button class="btn" data-action="clone-creature" data-id="'+item.id+'">Clonar para editar</button>':'<button class="btn" data-action="open-modal" data-type="'+table+'" data-id="'+item.id+'">Editar</button>')+'</div>';var fields=[];if(table==='npcs')fields=[['MOTIVACIÓN','motivation'],['LO QUE SABE','knows'],['LO QUE QUIERE','wants']];if(table==='villains'){fields=[['MOTIVACIÓN','motivation'],['ARCO','arc']];if(item.stats)h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+(item.stats.hp||0)+'</span><span class="creature-stat dmg">'+esc(item.stats.dmg||'?')+'</span>'+(item.stats.special?'<span class="creature-stat special">'+esc(item.stats.special)+'</span>':'')+'</div></div>'}if(table==='bestiary'){fields=[['DESCRIPCIÓN','description']];h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+(item.hp||0)+'</span><span class="creature-stat dmg">'+esc(item.dmg||'?')+'</span>'+(item.resist?'<span class="creature-stat">Resist: '+esc(item.resist)+'</span>':'')+'</div></div>';if(item.terrain&&item.terrain.length)h+='<div class="detail-section"><div class="detail-section-label">TERRENO</div><div style="font-size:14px;color:var(--ink2)">'+item.terrain.map(esc).join(' · ')+'</div></div>'}if(table==='loot')fields=[['DESCRIPCIÓN','description'],['EFECTO','effect']];fields.forEach(function(f){if(item[f[1]])h+='<div class="detail-section"><div class="detail-section-label">'+f[0]+'</div><div class="detail-section-value">'+esc(item[f[1]])+'</div></div>'});if(item.voice)h+='<div class="detail-voice">"'+esc(item.voice)+'"</div>';if(item.abilities&&item.abilities.length){h+='<div class="detail-section"><div class="detail-section-label">HABILIDADES</div>';item.abilities.forEach(function(a){h+='<div class="ability-line"><span class="ability-name">'+esc(a.name)+'</span> <span style="color:var(--ink4)">['+esc(a.type)+']</span><div style="font-size:13px;color:var(--ink3)">'+esc(a.desc)+'</div></div>'});h+='</div>'}if(item.moves&&item.moves.length){h+='<div class="detail-section"><div class="detail-section-label">MOVES ENTRE SESIONES</div>';item.moves.forEach(function(m){h+='<div class="move-item"><input type="checkbox" '+(m.done?'checked':'')+' data-action="toggle-move" data-villain-id="'+item.id+'" data-move-text="'+esc(m.text)+'"><span class="'+(m.done?'move-done':'')+'">'+esc(m.text)+'</span></div>'});h+='</div>'}return h}
-function filterLib(q){var items=dbGetAll(selectedLibTab);if(q)items=items.filter(function(i){return i.name.toLowerCase().indexOf(q.toLowerCase())>-1});document.getElementById('lib-items').innerHTML=renderLibList(items)}
+function filterLib(q){var items=libItems(selectedLibTab);if(selectedLibTab==='bestiary')items=applyFilters(items,bestiaryFilters);if(q)items=items.filter(function(i){return i.name.toLowerCase().indexOf(q.toLowerCase())>-1});document.getElementById('lib-items').innerHTML=renderLibList(items)}
 function toggleMove(vid,text){var v=dbGetById('villains',vid);if(!v)return;v.moves.forEach(function(m){if(m.text===text)m.done=!m.done});dbUpdate('villains',vid,{moves:v.moves});renderLibrary()}
 
 /* PLAYERS */
-function renderPlayers(){var el=document.getElementById('players-content');if(!el)return;var pls=dbGetAll('players');if(!pls.length){el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay jugadores</div><div class="empty-state-desc">Agrega a los héroes de tu mesa.</div><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div>';return}var h='<div class="section-label">PERSONAJES</div><div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div><div class="player-grid">';pls.forEach(function(p){var r=resolvePlayer(p);h+='<div class="player-card" style="border-color:'+r.factionColor+'"><div class="player-card-header">'+avatarHtml(r,'width:52px;height:52px;font-size:20px;')+'<div><div class="player-card-name">'+esc(r.name)+'</div><div class="player-card-class">'+esc(r.cls)+(r.sub?' · '+esc(r.sub):'')+(r.kit?' · Kit '+esc(r.kit):'')+' · Plano '+r.plano+'</div></div></div>';h+='<div class="player-meta"><span class="player-tag faction">'+esc(r.faction)+'</span><span class="player-tag">HP '+r.hp+'</span><span class="player-tag">Aen +'+r.aenRegen+'/turno</span></div>';if(r.backstory)h+='<div style="font-size:13px;color:var(--ink3);margin-top:8px;line-height:1.5">'+esc(r.backstory)+'</div>';h+='<div class="echo-tracker"><div class="echo-tracker-label">ECHO</div><div class="echo-dots">';for(var i=0;i<5;i++)h+='<div class="echo-dot'+(i<r.echo?' filled':'')+'">✦</div>';h+='</div><button class="echo-btn" data-action="sub-echo" data-id="'+p.id+'" style="padding:4px 8px;font-size:12px;min-height:32px">−</button><button class="echo-btn" data-action="add-echo" data-id="'+p.id+'" style="padding:4px 8px;font-size:12px;min-height:32px">+</button></div>';h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn" data-action="open-modal" data-type="players" data-id="'+p.id+'">Editar</button><button class="delete-btn" data-action="delete-item" data-type="players" data-id="'+p.id+'">×</button></div></div>'});h+='</div>';el.innerHTML=h}
+function renderPlayers(){var el=document.getElementById('players-content');if(!el)return;var pls=dbGetAll('players');if(!pls.length){el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay jugadores</div><div class="empty-state-desc">Agrega a los héroes de tu mesa.</div><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div>';return}var h='<div class="section-label">PERSONAJES</div><div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div><div class="player-grid">';pls.forEach(function(p){var r=resolvePlayer(p);h+='<div class="player-card" style="border-color:'+r.factionColor+'"><div class="player-card-header">'+avatarHtml(r,'width:52px;height:52px;font-size:20px;')+'<div><div class="player-card-name">'+esc(r.name)+'</div><div class="player-card-class">'+esc(r.cls)+(r.sub?' · '+esc(r.sub):'')+(r.kit?' · Kit '+esc(r.kit):'')+' · Plano '+r.plano+'</div></div></div>';h+='<div class="player-meta"><span class="player-tag faction">'+esc(r.faction)+'</span><span class="player-tag">HP '+r.hp+'</span><span class="player-tag">Aen +'+r.aenRegen+'/turno</span>'+(r.chosenFeat?'<span class="player-tag" style="background:var(--gold-pale);color:var(--gold)">'+esc(r.chosenFeat.name)+'</span>':'')+'</div>';if(r.backstory)h+='<div style="font-size:13px;color:var(--ink3);margin-top:8px;line-height:1.5">'+esc(r.backstory)+'</div>';h+='<div class="echo-tracker"><div class="echo-tracker-label">ECHO</div><div class="echo-dots">';for(var i=0;i<5;i++)h+='<div class="echo-dot'+(i<r.echo?' filled':'')+'">✦</div>';h+='</div><button class="echo-btn" data-action="sub-echo" data-id="'+p.id+'" style="padding:4px 8px;font-size:12px;min-height:32px">−</button><button class="echo-btn" data-action="add-echo" data-id="'+p.id+'" style="padding:4px 8px;font-size:12px;min-height:32px">+</button></div>';h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn" data-action="open-modal" data-type="players" data-id="'+p.id+'">Editar</button><button class="delete-btn" data-action="delete-item" data-type="players" data-id="'+p.id+'">×</button></div></div>'});h+='</div>';el.innerHTML=h}
 function adjustEcho(pid,d){var p=dbGetById('players',pid);if(!p)return;p.echo=Math.max(0,Math.min(5,(p.echo||0)+d));dbUpdate('players',pid,{echo:p.echo});renderPlayers()}
 
 /* SCENE BUILDER */
@@ -1198,23 +1247,58 @@ function closeModal(){document.getElementById('modal-root').innerHTML=''}
 function fld(label,name,val,ph,ta){var h='<div class="form-section"><div class="form-label">'+label+'</div>';if(ta)h+='<textarea class="form-input" id="f-'+name+'" placeholder="'+(ph||'')+'">'+esc(val)+'</textarea>';else h+='<input class="form-input" id="f-'+name+'" type="text" value="'+esc(val)+'" placeholder="'+(ph||'')+'">';return h+'</div>'}
 function sel(label,name,opts,val){var h='<div class="form-section"><div class="form-label">'+label+'</div><select class="form-input" id="f-'+name+'">';opts.forEach(function(o){h+='<option value="'+o.v+'"'+(val===o.v?' selected':'')+'>'+esc(o.l)+'</option>'});return h+'</select></div>'}
 function selP(label,name,opts,val){var h='<div class="form-section"><div class="form-label">'+label+'</div><select class="form-input" id="f-'+name+'" onchange="renderPlayerPreview()">';opts.forEach(function(o){h+='<option value="'+o.v+'"'+(val===o.v?' selected':'')+'>'+esc(o.l)+'</option>'});return h+'</select></div>'}
+function subclassSelectHtml(classId,subclassId){
+  var cls=G?G.classes.find(function(c){return c.id===classId}):null;
+  var h='<select class="form-input" id="f-subclassId" onchange="renderPlayerPreview()">';
+  h+='<option value="">— elige subclase —</option>';
+  if(cls)cls.subclasses.forEach(function(s){h+='<option value="'+s.id+'"'+(subclassId===s.id?' selected':'')+'>'+esc(s.name)+'</option>'});
+  h+='</select>';
+  if(!cls)h='<div style="font-size:13px;color:var(--ink4);padding:8px 0">Elige una clase primero.</div>';
+  return h;
+}
+function factionFeatHtml(factionId,featChosen){
+  var fac=G?G.factions.find(function(f){return f.id===factionId}):null;
+  if(!fac)return'';
+  var h='<div class="form-section faction-feat-block"><div class="form-label">'+esc(fac.question)+'</div>';
+  h+='<select class="form-input" id="f-featChosen" onchange="renderPlayerPreview()"><option value="">— elige tu respuesta —</option>';
+  fac.feats.forEach(function(ft,i){h+='<option value="'+i+'"'+(String(featChosen)===String(i)?' selected':'')+'>'+esc(ft.response)+' → '+esc(ft.name)+'</option>'});
+  h+='</select></div>';
+  return h;
+}
+function onClassChange(){
+  var classId=document.getElementById('f-classId').value;
+  document.getElementById('subclass-container').innerHTML=subclassSelectHtml(classId,'');
+  renderPlayerPreview();
+}
+function onFactionChange(){
+  var factionId=document.getElementById('f-factionId').value;
+  document.getElementById('faction-feat-container').innerHTML=factionFeatHtml(factionId,'');
+  renderPlayerPreview();
+}
 function renderPlayerPreview(){
   var el=document.getElementById('player-preview');if(!el||!G)return;
   function gv(n){var x=document.getElementById('f-'+n);return x?x.value:''}
-  var draft={name:gv('name')||'?',initial:gv('initial'),bg:gv('bg'),fg:gv('fg'),img:gv('img'),classId:gv('classId'),subclassId:gv('subclassId'),kitId:gv('kitId'),factionId:gv('factionId'),plano:parseInt(gv('plano'))||1,echo:0};
+  var featChosen=gv('featChosen');
+  var draft={name:gv('name')||'?',initial:gv('initial'),bg:gv('bg'),fg:gv('fg'),img:gv('img'),classId:gv('classId'),subclassId:gv('subclassId'),kitId:gv('kitId'),factionId:gv('factionId'),featChosen:featChosen===''?null:parseInt(featChosen),plano:parseInt(gv('plano'))||1,echo:0};
   var r=resolvePlayer(draft);
-  var fac=G.factions.find(function(f){return f.id===draft.factionId});
   var h='<div class="player-preview-card" style="border-color:'+(r.factionColor||'var(--border)')+'">';
   h+='<div class="form-label" style="color:var(--gold);margin-bottom:10px">VISTA PREVIA</div>';
   h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'+avatarHtml(r,'width:52px;height:52px;font-size:20px;')+'<div><div style="font-size:17px;font-weight:700;font-family:var(--serif)">'+esc(r.name)+'</div><div style="font-size:13px;color:var(--ink3)">'+esc(r.cls)+(r.sub?' · '+esc(r.sub):'')+(r.kit?' · Kit '+esc(r.kit):'')+'</div></div></div>';
-  h+='<div class="player-meta"><span class="player-tag faction">'+esc(r.faction||'Sin facción')+'</span><span class="player-tag">HP '+r.hp+'</span><span class="player-tag">Aen +'+r.aenRegen+'/turno</span><span class="player-tag">Plano '+r.plano+'</span></div>';
-  // Abilities
-  if(r.abilities.length){h+='<div class="form-label" style="margin-top:12px;margin-bottom:6px">HABILIDADES ('+r.abilities.length+')</div>';r.abilities.forEach(function(a){h+='<div class="ability-line"><span class="ability-name">'+esc(a.name)+'</span> <span style="color:var(--ink4);font-size:11px">['+esc(a.type)+']</span>'+(a.cost?' <span style="color:var(--gold);font-size:11px">'+esc(a.cost)+'</span>':'')+'<div style="font-size:12px;color:var(--ink3)">'+esc(a.desc)+'</div></div>'})}
-  // Faction feats
-  if(fac&&fac.feats){h+='<div class="form-label" style="margin-top:12px;margin-bottom:6px">FEATS DE '+esc(fac.name.toUpperCase())+'</div>';fac.feats.forEach(function(ft){h+='<div class="ability-line"><span class="ability-name">'+esc(ft.name)+'</span> <span style="color:var(--ink4);font-size:11px">['+esc(ft.attr)+']</span><div style="font-size:12px;color:var(--ink3)">'+esc(ft.desc)+'</div></div>'})}
+  h+='<div class="player-meta"><span class="player-tag faction">'+esc(r.faction||'Sin facción')+'</span><span class="player-tag">HP '+r.hp+'</span><span class="player-tag">Aen +'+r.aenRegen+'/turno</span><span class="player-tag">Plano '+r.plano+'</span>'+(r.resource?'<span class="player-tag">'+esc(r.resource)+'</span>':'')+'</div>';
+  // Class abilities
+  if(r.classAbilities.length){h+='<div class="preview-group-label">HABILIDADES DE CLASE</div>';r.classAbilities.forEach(function(a){h+=abilityLineHtml(a)})}
+  // Subclass abilities
+  if(r.subAbilities.length){h+='<div class="preview-group-label">HABILIDADES DE SUBCLASE</div>';r.subAbilities.forEach(function(a){h+=abilityLineHtml(a)})}
+  else if(r.cls!=='?'&&!r.sub){h+='<div class="preview-group-label">HABILIDADES DE SUBCLASE</div><div style="font-size:12px;color:var(--ink4);padding:4px 0">Elige una subclase para ver sus habilidades.</div>'}
+  // Kit ability
+  if(r.kitAbility){h+='<div class="preview-group-label">HABILIDAD DE KIT</div>';h+=abilityLineHtml(r.kitAbility);if(r.kitAbility.drawback)h+='<div style="font-size:11px;color:var(--red);padding:2px 0 6px 0">⚠ Drawback: '+esc(r.kitAbility.drawback)+'</div>'}
+  // Faction feat (chosen)
+  if(r.chosenFeat){h+='<div class="preview-group-label">FEAT DE FACCIÓN</div>';h+='<div class="ability-line"><span class="ability-name">'+esc(r.chosenFeat.name)+'</span> <span style="color:var(--ink4);font-size:11px">['+esc(r.chosenFeat.attr)+']</span><div style="font-size:12px;color:var(--ink3)">'+esc(r.chosenFeat.desc)+'</div></div>'}
+  else if(r.faction&&r.faction!=='Sin facción'){h+='<div class="preview-group-label">FEAT DE FACCIÓN</div><div style="font-size:12px;color:var(--ink4);padding:4px 0">Responde la pregunta de tu facción para obtener tu feat.</div>'}
   h+='</div>';
   el.innerHTML=h;
 }
+function abilityLineHtml(a){return '<div class="ability-line"><span class="ability-name">'+esc(a.name)+'</span> <span style="color:var(--ink4);font-size:11px">['+esc(a.type)+']</span>'+(a.cost?' <span style="color:var(--gold);font-size:11px">'+esc(a.cost)+'</span>':'')+'<div style="font-size:12px;color:var(--ink3)">'+esc(a.desc)+'</div></div>'}
 function getFields(type,v){var h='';
 if(type==='campaign')h+=fld('Nombre','name',v.name,'Nombre de la campaña');
 if(type==='scene'){h+=fld('Nombre','name',v.name,'');h+=sel('Tipo','type',[{v:'combat',l:'Combate'},{v:'narrative',l:'Narrativa'}],v.type||'narrative');h+=fld('Hook','hook',v.setup?v.setup.hook:'','¿Cómo abre la escena?',1);h+=fld('Conflicto','conflict',v.setup?v.setup.conflict:'','¿Qué hay que resolver?',1);h+=fld('Si fallan','stakesFail',v.setup?v.setup.stakesFail:'','');h+=fld('Si triunfan','stakesWin',v.setup?v.setup.stakesWin:'','');h+=fld('Beat de salida','exit',v.setup?v.setup.exit:'','',1);h+=fld('Lair Actions (una por línea)','lairActions',(v.lairActions||[]).join('\n'),'Solo combate',1);h+=fld('Notas DM','notes',v.notes,'Música, recordatorios...',1)}
@@ -1222,7 +1306,18 @@ if(type==='npcs'){h+=fld('Nombre','name',v.name,'');h+=fld('Rol','role',v.role,'
 if(type==='villains'){h+=fld('Nombre','name',v.name,'');h+=fld('Rol','role',v.role,'');h+=sel('Estado','status',[{v:'prepared',l:'Preparado'},{v:'active',l:'Activo'}],v.status||'prepared');h+=fld('Motivación','motivation',v.motivation,'',1);h+=fld('Arco narrativo','arc',v.arc,'',1);h+=fld('HP','hp',v.stats?v.stats.hp:'','');h+=fld('Daño','dmg',v.stats?v.stats.dmg:'','Ej: 8-14');h+=fld('Especial','special',v.stats?v.stats.special:'','');h+=fld('Resistencia','resist',v.stats?v.stats.resist:'','')}
 if(type==='bestiary'){h+=fld('Nombre','name',v.name,'');if(G){h+=sel('Tipo','btype',G.creatureTypes.map(function(t){return{v:t,l:t}}),v.type||'Bestia');h+=sel('Dificultad','difficulty',G.difficulties.map(function(d){return{v:d.id,l:d.name}}),v.difficulty||'medium')}else{h+=fld('Tipo','btype',v.type,'');h+=fld('Dificultad','difficulty',v.difficulty,'')}h+=fld('HP','hp',v.hp,'');h+=fld('Daño','dmg',v.dmg,'Ej: 4-8');h+=fld('Resistencia','resist',v.resist,'');h+=fld('Terreno (comas)','terrain',(v.terrain||[]).join(', '),'Bosque, Cueva');h+=fld('Descripción','description',v.description,'',1)}
 if(type==='loot'){h+=fld('Nombre','name',v.name,'');h+=sel('Tipo','ltype',[{v:'Arma',l:'Arma'},{v:'Narrativo',l:'Narrativo'},{v:'Información',l:'Información'},{v:'Consumible',l:'Consumible'}],v.type||'Consumible');if(G)h+=sel('Rareza','rarity',G.rarities.map(function(r){return{v:r.id,l:r.name}}),v.rarity||'common');h+=fld('Descripción','description',v.description,'',1);h+=fld('Efecto','effect',v.effect,'',1)}
-if(type==='players'){h+=fld('Nombre','name',v.name,'');h+=fld('Inicial','initial',v.initial||'','Una letra');h+=fld('URL de imagen','img',v.img||'','https://... (opcional)');h+='<div class="form-row"><div class="form-section"><div class="form-label">Color fondo</div><input class="form-input" id="f-bg" type="text" value="'+esc(v.bg||'#2d3a5e')+'" oninput="renderPlayerPreview()"></div><div class="form-section"><div class="form-label">Color texto</div><input class="form-input" id="f-fg" type="text" value="'+esc(v.fg||'#8aa4d4')+'" oninput="renderPlayerPreview()"></div></div>';if(G){h+=selP('Facción','factionId',G.factions.map(function(f){return{v:f.id,l:f.name}}),v.factionId||'');h+=selP('Clase','classId',G.classes.map(function(c){return{v:c.id,l:c.nameEs+' ('+c.type+')'}}),v.classId||'');var subs=[{v:'',l:'— ninguna —'}];G.classes.forEach(function(c){c.subclasses.forEach(function(s){subs.push({v:s.id,l:c.nameEs+' → '+s.name})})});h+=selP('Subclase','subclassId',subs,v.subclassId||'');h+=selP('Kit','kitId',[{v:'',l:'— ninguno —'}].concat(G.kits.map(function(k){return{v:k.id,l:k.name+' ('+k.fantasy+')'}})),v.kitId||'')}h+='<div class="form-row"><div class="form-section"><div class="form-label">Plano</div><input class="form-input" id="f-plano" type="text" value="'+esc(v.plano||1)+'" oninput="renderPlayerPreview()"></div></div>';h+=fld('Backstory','backstory',v.backstory||'','',1);h+='<div id="player-preview"></div>'}
+if(type==='players'){h+=fld('Nombre','name',v.name,'');h+=fld('Inicial','initial',v.initial||'','Una letra');h+=fld('URL de imagen','img',v.img||'','https://... (opcional)');h+='<div class="form-row"><div class="form-section"><div class="form-label">Color fondo</div><input class="form-input" id="f-bg" type="text" value="'+esc(v.bg||'#2d3a5e')+'" oninput="renderPlayerPreview()"></div><div class="form-section"><div class="form-label">Color texto</div><input class="form-input" id="f-fg" type="text" value="'+esc(v.fg||'#8aa4d4')+'" oninput="renderPlayerPreview()"></div></div>';if(G){
+  // Class dropdown
+  h+='<div class="form-section"><div class="form-label">Clase</div><select class="form-input" id="f-classId" onchange="onClassChange()"><option value="">— elige clase —</option>'+G.classes.map(function(c){return '<option value="'+c.id+'"'+(v.classId===c.id?' selected':'')+'>'+esc(c.nameEs)+' ('+c.type+')</option>'}).join('')+'</select></div>';
+  // Subclass dropdown (filtered by class) - rendered in a container that onClassChange refreshes
+  h+='<div class="form-section"><div class="form-label">Subclase</div><div id="subclass-container">'+subclassSelectHtml(v.classId,v.subclassId)+'</div></div>';
+  // Kit dropdown
+  h+='<div class="form-section"><div class="form-label">Kit</div><select class="form-input" id="f-kitId" onchange="renderPlayerPreview()"><option value="">— elige kit —</option>'+G.kits.map(function(k){return '<option value="'+k.id+'"'+(v.kitId===k.id?' selected':'')+'>'+esc(k.name)+' ('+esc(k.fantasy)+')</option>'}).join('')+'</select></div>';
+  // Faction dropdown
+  h+='<div class="form-section"><div class="form-label">Facción</div><select class="form-input" id="f-factionId" onchange="onFactionChange()"><option value="">— elige facción —</option>'+G.factions.map(function(f){return '<option value="'+f.id+'"'+(v.factionId===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('')+'</select></div>';
+  // Faction question + feat choice (rendered in container)
+  h+='<div id="faction-feat-container">'+factionFeatHtml(v.factionId,v.featChosen)+'</div>';
+}h+='<div class="form-row"><div class="form-section"><div class="form-label">Plano</div><input class="form-input" id="f-plano" type="text" value="'+esc(v.plano||1)+'" oninput="renderPlayerPreview()"></div></div>';h+=fld('Backstory','backstory',v.backstory||'','',1);h+='<div id="player-preview"></div>'}
 return h}
 function saveModal(type,id){function gv(n){var el=document.getElementById('f-'+n);return el?el.value.trim():''}var item;var beatId=document.querySelector('[data-action=save-modal]').dataset.beat;
 if(type==='campaign'){var existing=dbLoad('campaign');if(existing&&id){existing.name=gv('name');dbSave('campaign',existing)}else{item={id:'camp-'+uid(),name:gv('name'),arcs:[{id:'arc-1',name:'Arco I',beats:[]}]};dbSave('campaign',item)}closeModal();nav('campaign');return}
@@ -1231,7 +1326,7 @@ if(type==='npcs')item={name:gv('name'),role:gv('role'),race:gv('race'),motivatio
 if(type==='villains')item={name:gv('name'),role:gv('role'),status:gv('status'),motivation:gv('motivation'),arc:gv('arc'),stats:{hp:parseInt(gv('hp'))||0,dmg:gv('dmg'),special:gv('special'),resist:gv('resist')},abilities:(id&&dbGetById('villains',id))?dbGetById('villains',id).abilities:[],moves:(id&&dbGetById('villains',id))?dbGetById('villains',id).moves:[]};
 if(type==='bestiary')item={name:gv('name'),type:gv('btype'),difficulty:gv('difficulty'),hp:parseInt(gv('hp'))||10,dmg:gv('dmg'),resist:gv('resist'),terrain:gv('terrain').split(',').map(function(t){return t.trim()}).filter(Boolean),description:gv('description'),abilities:(id&&dbGetById('bestiary',id))?dbGetById('bestiary',id).abilities:[],lairSuggestions:[]};
 if(type==='loot')item={name:gv('name'),type:gv('ltype'),rarity:gv('rarity'),description:gv('description'),effect:gv('effect'),delivered:false};
-if(type==='players'){item={name:gv('name'),initial:gv('initial')||gv('name').charAt(0),img:gv('img'),bg:gv('bg'),fg:gv('fg'),factionId:gv('factionId'),classId:gv('classId'),subclassId:gv('subclassId'),kitId:gv('kitId'),plano:parseInt(gv('plano'))||1,backstory:gv('backstory'),echo:0};if(id){var old=dbGetById('players',id);if(old)item.echo=old.echo}}
+if(type==='players'){var fc=gv('featChosen');item={name:gv('name'),initial:gv('initial')||gv('name').charAt(0),img:gv('img'),bg:gv('bg'),fg:gv('fg'),factionId:gv('factionId'),classId:gv('classId'),subclassId:gv('subclassId'),kitId:gv('kitId'),featChosen:fc===''||fc==null?null:parseInt(fc),plano:parseInt(gv('plano'))||1,backstory:gv('backstory'),echo:0};if(id){var old=dbGetById('players',id);if(old)item.echo=old.echo}}
 var rt=type==='scene'?'scenes':type;if(id)dbUpdate(rt,id,item);else dbCreate(rt,item);closeModal();renderView(currentView)}
 
 
@@ -1325,8 +1420,8 @@ function renderWizardStep2(){
   w.creatureIds.forEach(function(ci){var c=getCreatureById(ci.creatureId);if(!c)return;h+='<div class="selected-participant"><div><span class="creature-name">'+esc(c.name)+'</span> <span class="difficulty-tag diff-'+(c.difficulty||'medium')+'">'+diffLabel(c.difficulty)+'</span><div style="font-size:12px;color:var(--ink3)">HP '+c.hp+' · '+esc(c.dmg||'')+'</div></div><div class="qty-stepper"><button data-action="wz-qty" data-cid="'+ci.creatureId+'" data-delta="-1">−</button><span>'+ci.qty+'</span><button data-action="wz-qty" data-cid="'+ci.creatureId+'" data-delta="1">+</button></div></div>'});
   w.villainIds.forEach(function(vid){var v=dbGetById('villains',vid);if(!v)return;h+='<div class="selected-participant"><div><span class="creature-name" style="color:var(--red)">'+esc(v.name)+'</span> <span style="font-size:11px;color:var(--red)">VILLANO</span><div style="font-size:12px;color:var(--ink3)">HP '+(v.stats?v.stats.hp:'?')+' · '+esc(v.stats?v.stats.dmg:'')+'</div></div><button class="delete-btn" data-action="wz-remove-villain" data-id="'+vid+'">×</button></div>'});
   h+='</div>';
-  // Creature picker
-  h+='<div class="form-section"><div class="form-label">+ AGREGAR DEL BESTIARIO</div><input type="text" class="form-input" placeholder="Buscar criatura..." oninput="filterWizPicker(this.value,\'creatures\')"><div class="wiz-picker" id="wiz-picker-creatures">'+renderWizCreaturePicker('')+'</div></div>';
+  // Creature picker with filters
+  h+='<div class="form-section"><div class="form-label">+ AGREGAR DEL BESTIARIO</div>'+renderFilterChips('wiz')+'<input type="text" class="form-input" placeholder="Buscar criatura..." oninput="filterWizPicker(this.value,\'creatures\')" style="margin-top:8px"><div class="wiz-picker" id="wiz-picker-creatures">'+renderWizCreaturePicker('')+'</div></div>';
   // Villain picker
   var villains=dbGetAll('villains');
   if(villains.length){h+='<div class="form-section"><div class="form-label">+ AGREGAR VILLANO</div><div class="wiz-picker" id="wiz-picker-villains">'+renderWizVillainPicker()+'</div></div>'}
@@ -1375,7 +1470,7 @@ function renderDifficultyMeter(){
 
 function renderWizCreaturePicker(q){
   var w=sceneWizard;
-  var creatures=allCreatures();
+  var creatures=applyFilters(allCreatures(),wizFilters);
   if(q)creatures=creatures.filter(function(c){return c.name.toLowerCase().indexOf(q.toLowerCase())>-1});
   if(!creatures.length)return'<div style="font-size:13px;color:var(--ink4);padding:8px">No hay criaturas. Créalas en Biblioteca → Bestiario.</div>';
   var h='';
