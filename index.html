@@ -474,26 +474,25 @@ textarea.form-input{min-height:70px;line-height:1.5}
 </style>
 </head>
 <body>
-
 <aside class="sidebar">
   <div class="sb-brand"><div class="sb-brand-name">EPIC</div><div class="sb-brand-sub">STORY MASTER</div></div>
   <div class="sb-campaign" id="sb-campaign-info"></div>
   <nav class="sb-nav">
-    <div class="sb-item active" onclick="nav('campaign')"><div class="sb-item-icon">📜</div><div class="sb-item-name">Campaña</div></div>
-    <div class="sb-item" onclick="nav('scenes')"><div class="sb-item-icon">🎬</div><div class="sb-item-name">Escenas</div></div>
-    <div class="sb-item" onclick="nav('library')"><div class="sb-item-icon">📖</div><div class="sb-item-name">Biblioteca</div></div>
-    <div class="sb-item" onclick="nav('players')"><div class="sb-item-icon">👥</div><div class="sb-item-name">Personajes</div></div>
-    <div class="sb-item" onclick="nav('session')"><div class="sb-item-icon">⚡</div><div class="sb-item-name">Sesión en Vivo</div></div>
+    <div class="sb-item active" data-action="nav" data-type="campaign"><div class="sb-item-icon">📜</div><div class="sb-item-name">Campaña</div></div>
+    <div class="sb-item" data-action="nav" data-type="scenes"><div class="sb-item-icon">🎬</div><div class="sb-item-name">Escenas</div></div>
+    <div class="sb-item" data-action="nav" data-type="library"><div class="sb-item-icon">📖</div><div class="sb-item-name">Biblioteca</div></div>
+    <div class="sb-item" data-action="nav" data-type="players"><div class="sb-item-icon">👥</div><div class="sb-item-name">Personajes</div></div>
+    <div class="sb-item" data-action="nav" data-type="session"><div class="sb-item-icon">⚡</div><div class="sb-item-name">Sesión en Vivo</div></div>
   </nav>
   <hr class="sb-divider">
   <div class="sb-players" id="sb-players-bar"></div>
-  <div class="sb-settings" onclick="nav('settings')">⚙️ Configuración</div>
+  <div class="sb-settings" data-action="nav" data-type="settings">⚙️ Configuración</div>
 </aside>
 <div class="main">
   <div class="topbar">
     <div class="breadcrumb" id="breadcrumb"></div>
     <div class="topbar-spacer"></div>
-    <button class="btn btn-gold" onclick="openModal('scene',null)">+ Escena rápida</button>
+    <button class="btn btn-gold" data-action="open-modal" data-type="scene">+ Escena rápida</button>
   </div>
   <div class="content">
     <div class="view active" id="view-campaign"><div id="campaign-content"></div></div>
@@ -505,12 +504,9 @@ textarea.form-input{min-height:70px;line-height:1.5}
   </div>
 </div>
 <div id="modal-root"></div>
-
 <script src="gamedata.js"></script>
 <script>
-/* ══════════════════════════════════════════════
-   DB LAYER
-   ══════════════════════════════════════════════ */
+/* DB LAYER */
 var DB_PREFIX='eqsm_';
 var DB_TABLES=['campaign','sessions','scenes','npcs','villains','bestiary','loot','players'];
 function dbKey(t){return DB_PREFIX+t}
@@ -519,667 +515,107 @@ function dbSave(t,d){try{localStorage.setItem(dbKey(t),JSON.stringify(d));return
 function dbGetAll(t){return dbLoad(t)||[]}
 function dbGetById(t,id){return dbGetAll(t).find(function(i){return i.id===id})||null}
 function dbCreate(t,item){var items=dbGetAll(t);if(!item.id)item.id=t.substring(0,3)+'-'+Date.now().toString(36);items.push(item);dbSave(t,items);return item}
-function dbUpdate(t,id,updates){var items=dbGetAll(t);var idx=items.findIndex(function(i){return i.id===id});if(idx===-1)return;Object.keys(updates).forEach(function(k){items[idx][k]=updates[k]});dbSave(t,items);return items[idx]}
+function dbUpdate(t,id,up){var items=dbGetAll(t);var idx=items.findIndex(function(i){return i.id===id});if(idx===-1)return;Object.keys(up).forEach(function(k){items[idx][k]=up[k]});dbSave(t,items);return items[idx]}
 function dbDelete(t,id){dbSave(t,dbGetAll(t).filter(function(i){return i.id!==id}))}
-function dbSaveSingle(t,d){localStorage.setItem(dbKey(t),JSON.stringify(d))}
-function dbLoadSingle(t){try{var d=localStorage.getItem(dbKey(t));return d?JSON.parse(d):null}catch(e){return null}}
-
-function seedIfEmpty(){
-  if(dbLoad('_initialized'))return;
-  DB_TABLES.forEach(function(t){if(!dbLoad(t))dbSave(t,t==='campaign'?null:[])});
-  dbSave('_initialized',true);
-}
+function seedIfEmpty(){if(dbLoad('_init'))return;DB_TABLES.forEach(function(t){if(!dbLoad(t))dbSave(t,t==='campaign'?null:[])});dbSave('_init',true)}
 seedIfEmpty();
 
-/* ══════════════════════════════════════════════
-   STATE
-   ══════════════════════════════════════════════ */
-var currentView='campaign';
-var selectedLibTab='npcs';
-var selectedLibItem=null;
-var selectedSceneId=null;
-var selectedBeatIdx=0;
-var combat=null;
-var expandedUnits={};
-var dragSrc=null;
-var modalStack=[];
+/* STATE */
+var currentView='campaign',selectedLibTab='npcs',selectedLibItem=null,selectedSceneId=null,selectedBeatIdx=0;
+var combat=null,expandedUnits={};
+var G=(typeof GAMEDATA!=='undefined')?GAMEDATA:null;
 
-/* ══════════════════════════════════════════════
-   HELPERS
-   ══════════════════════════════════════════════ */
-function resolvePlayer(p){
-  if(!p)return null;
-  var G=typeof GAMEDATA!=='undefined'?GAMEDATA:null;
-  var cls=G?G.classes.find(function(c){return c.id===p.classId}):null;
-  var sub=cls?cls.subclasses.find(function(s){return s.id===p.subclassId}):null;
-  var kit=G?G.kits.find(function(k){return k.id===p.kitId}):null;
-  var fac=G?G.factions.find(function(f){return f.id===p.factionId}):null;
-  var ab=[];
-  if(cls)cls.abilities.forEach(function(a){ab.push(a)});
-  if(sub)sub.abilities.forEach(function(a){ab.push(a)});
-  if(kit)ab.push({name:kit.ability.name,type:'Kit',desc:kit.ability.desc,cost:kit.ability.cost});
-  return{id:p.id,name:p.name,initial:p.initial||p.name.charAt(0),bg:p.bg||'#444',fg:p.fg||'#fff',echo:p.echo||0,
-    cls:cls?cls.nameEs:(p.classId||''),sub:sub?sub.name:'',kit:kit?kit.name:'',plano:p.plano||1,
-    faction:fac?fac.name:(p.factionId||''),factionColor:fac?fac.color:'#666',
-    hp:(G?G.rules.hpBase:10)+(kit?kit.hpBonus:0),aenRegen:(G?G.rules.aenPerTurn:2)+(kit?kit.aenBonus:0),
-    abilities:ab,backstory:p.backstory||''}
-}
-
-function getHpColor(pct){if(pct>60)return'var(--green)';if(pct>25)return'var(--orange)';return'var(--red)'}
-function diffLabel(d){return{easy:'Fácil',medium:'Medio',hard:'Duro',boss:'Jefe'}[d]||d}
-function rarityClass(r){return{common:'rarity-common',uncommon:'rarity-uncommon',rare:'rarity-rare',legendary:'rarity-legendary'}[r]||'rarity-common'}
+/* HELPERS */
 function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,4)}
+function resolvePlayer(p){if(!p)return null;var cls=G?G.classes.find(function(c){return c.id===p.classId}):null;var sub=cls?cls.subclasses.find(function(s){return s.id===p.subclassId}):null;var kit=G?G.kits.find(function(k){return k.id===p.kitId}):null;var fac=G?G.factions.find(function(f){return f.id===p.factionId}):null;var ab=[];if(cls)cls.abilities.forEach(function(a){ab.push(a)});if(sub)sub.abilities.forEach(function(a){ab.push(a)});if(kit)ab.push({name:kit.ability.name,type:'Kit',desc:kit.ability.desc,cost:kit.ability.cost});return{id:p.id,name:p.name,initial:p.initial||p.name.charAt(0),bg:p.bg||'#444',fg:p.fg||'#fff',echo:p.echo||0,cls:cls?cls.nameEs:(p.classId||'?'),sub:sub?sub.name:'',kit:kit?kit.name:'',plano:p.plano||1,faction:fac?fac.name:(p.factionId||''),factionColor:fac?fac.color:'#666',hp:(G?G.rules.hpBase:10)+(kit?kit.hpBonus:0),aenRegen:(G?G.rules.aenPerTurn:2)+(kit?kit.aenBonus:0),abilities:ab,backstory:p.backstory||''}}
+function hpColor(pct){if(pct>60)return'var(--green)';if(pct>25)return'var(--orange)';return'var(--red)'}
+function diffLabel(d){return{easy:'Fácil',medium:'Medio',hard:'Duro',boss:'Jefe'}[d]||d}
+function rarCls(r){return'rarity-'+(r||'common')}
 
-/* ══════════════════════════════════════════════
-   NAVIGATION
-   ══════════════════════════════════════════════ */
-var breadcrumbs={campaign:'📜 <span>Campaña</span>',scenes:'🎬 <span>Scene Builder</span>',library:'📖 <span>Biblioteca</span>',players:'👥 <span>Personajes</span>',session:'⚡ <span>Sesión en Vivo</span>',settings:'⚙️ <span>Configuración</span>'};
-function nav(id){
-  currentView=id;
-  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
-  var t=document.getElementById('view-'+id);if(t)t.classList.add('active');
-  document.querySelectorAll('.sb-item').forEach(function(i){i.classList.remove('active')});
-  var items=document.querySelectorAll('.sb-item');
-  var map={campaign:0,scenes:1,library:2,players:3,session:4};
-  if(map[id]!==undefined)items[map[id]].classList.add('active');
-  document.getElementById('breadcrumb').innerHTML=breadcrumbs[id]||'';
-  renderView(id);
-}
+/* GLOBAL CLICK HANDLER — no more onclick escaping issues */
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-action]');
+  if(!el)return;
+  var a=el.dataset.action,t=el.dataset.type,id=el.dataset.id||null;
+  if(a==='open-modal'){e.preventDefault();openModal(t,id)}
+  if(a==='nav'){nav(t)}
+  if(a==='delete-item'){e.stopPropagation();if(confirm('¿Eliminar?')){dbDelete(t,id);selectedLibItem=null;renderView(currentView)}}
+  if(a==='select-lib'){selectedLibItem=id;renderLibrary()}
+  if(a==='select-scene'){selectedSceneId=id;nav('scenes')}
+  if(a==='select-beat'){selectedBeatIdx=parseInt(el.dataset.idx);renderCampaign()}
+  if(a==='start-combat'){e.stopPropagation();startCombatFromScene(id)}
+  if(a==='save-debrief'){saveDebrief(id)}
+  if(a==='add-beat'){addBeat()}
+  if(a==='add-echo'){adjustEcho(id,1)}
+  if(a==='next-turn'){nextTurn()}
+  if(a==='end-combat'){endCombat()}
+  if(a==='expand-unit'){toggleExpand(id)}
+  if(a==='use-lair'){useLairAction(id)}
+  if(a==='add-echo-tracker'){addEchoTracker(id)}
+  if(a==='toggle-move'){toggleMove(el.dataset.villainId,el.dataset.moveText)}
+  if(a==='adjust-hp'){var v=parseInt(document.getElementById('hp-'+id).value)||0;var sign=parseInt(el.dataset.sign);adjustHp(id,v*sign);document.getElementById('hp-'+id).value=''}
+  if(a==='toggle-action'){toggleAction(id,el.dataset.act)}
+  if(a==='close-modal'){closeModal()}
+  if(a==='save-modal'){saveModal(el.dataset.type,el.dataset.id==='null'?null:el.dataset.id)}
+  if(a==='export-db'){exportDB(t)}
+  if(a==='export-all'){exportAll()}
+  if(a==='reset-all'){if(confirm('¿Borrar TODO?')){DB_TABLES.forEach(function(t){localStorage.removeItem(dbKey(t))});localStorage.removeItem(dbKey('_init'));location.reload()}}
+});
 
-function renderView(id){
-  if(id==='campaign')renderCampaign();
-  if(id==='scenes')renderSceneBuilder(selectedSceneId);
-  if(id==='library')renderLibrary();
-  if(id==='players')renderPlayers();
-  if(id==='session')renderSession();
-  if(id==='settings')renderSettings();
-  renderSidebar();
-}
+/* NAV */
+var crumbs={campaign:'📜 <span>Campaña</span>',scenes:'🎬 <span>Scene Builder</span>',library:'📖 <span>Biblioteca</span>',players:'👥 <span>Personajes</span>',session:'⚡ <span>Sesión en Vivo</span>',settings:'⚙️ <span>Configuración</span>'};
+function nav(id){currentView=id;document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});var t=document.getElementById('view-'+id);if(t)t.classList.add('active');document.querySelectorAll('.sb-item').forEach(function(i){i.classList.remove('active')});var items=document.querySelectorAll('.sb-item');var map={campaign:0,scenes:1,library:2,players:3,session:4};if(map[id]!==undefined&&items[map[id]])items[map[id]].classList.add('active');document.getElementById('breadcrumb').innerHTML=crumbs[id]||'';renderView(id)}
+function renderView(id){renderSidebar();if(id==='campaign')renderCampaign();if(id==='scenes')renderSceneBuilder(selectedSceneId);if(id==='library')renderLibrary();if(id==='players')renderPlayers();if(id==='session')renderSession();if(id==='settings')renderSettings()}
+function renderSidebar(){var camp=dbLoad('campaign');var ci=document.getElementById('sb-campaign-info');if(ci){ci.innerHTML=camp?'<div class="sb-campaign-label">CAMPAÑA ACTIVA</div><div class="sb-campaign-name">'+camp.name+'</div>':'<div class="sb-campaign-label">SIN CAMPAÑA</div>'}var pb=document.getElementById('sb-players-bar');if(pb){var pls=dbGetAll('players');if(!pls.length){pb.innerHTML=''}else{var h='<div class="sb-players-label">EN MESA</div><div class="sb-player-list">';pls.forEach(function(p){h+='<div class="sb-player" style="background:'+(p.bg||'#444')+';color:'+(p.fg||'#fff')+'" title="'+p.name+'">'+(p.initial||p.name.charAt(0))+'</div>'});h+='</div>';pb.innerHTML=h}}}
 
-function renderSidebar(){
-  var camp=dbLoadSingle('campaign');
-  var ci=document.getElementById('sb-campaign-info');
-  if(ci){
-    if(camp){ci.innerHTML='<div class="sb-campaign-label">CAMPAÑA ACTIVA</div><div class="sb-campaign-name">'+camp.name+'</div>'}
-    else{ci.innerHTML='<div class="sb-campaign-label">SIN CAMPAÑA</div>'}
-  }
-  var pb=document.getElementById('sb-players-bar');
-  if(pb){
-    var pls=dbGetAll('players');
-    if(pls.length===0){pb.innerHTML=''}
-    else{
-      var h='<div class="sb-players-label">EN MESA</div><div class="sb-player-list">';
-      pls.forEach(function(p){h+='<div class="sb-player" style="background:'+(p.bg||'#444')+';color:'+(p.fg||'#fff')+'" title="'+p.name+'">'+( p.initial||p.name.charAt(0))+'</div>'});
-      h+='</div>';pb.innerHTML=h;
-    }
-  }
-}
+/* CAMPAIGN */
+function renderCampaign(){var el=document.getElementById('campaign-content');if(!el)return;var camp=dbLoad('campaign');if(!camp){el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay campaña activa</div><div class="empty-state-desc">Crea una campaña para empezar.</div><button class="btn btn-primary" data-action="open-modal" data-type="campaign">Crear campaña</button></div>';return}var h='<div class="section-label">'+camp.name+'</div>';var arc=(camp.arcs||[])[0]||{beats:[]};h+='<div class="beats-row">';(arc.beats||[]).forEach(function(b,i){h+='<div class="beat-card'+(i===selectedBeatIdx?' active':'')+'" data-action="select-beat" data-idx="'+i+'"><div class="beat-num">BEAT '+(i+1)+'</div><div class="beat-name">'+b.name+'</div></div>';if(i<arc.beats.length-1)h+='<div class="beat-connector">—</div>'});h+='<div style="flex-shrink:0;display:flex;align-items:center"><button class="btn" data-action="add-beat">+</button></div></div>';var scenes=dbGetAll('scenes');var beat=arc.beats[selectedBeatIdx];var beatScenes=beat?scenes.filter(function(s){return(beat.scenes||[]).indexOf(s.id)>-1}):[];var allAssigned=[];(camp.arcs||[]).forEach(function(a){(a.beats||[]).forEach(function(b){allAssigned=allAssigned.concat(b.scenes||[])})});var unassigned=scenes.filter(function(s){return allAssigned.indexOf(s.id)===-1});h+='<div class="scenes-header flex-between"><div class="section-label" style="margin:0">ESCENAS'+(beat?' — '+beat.name:'')+'</div><button class="btn" data-action="open-modal" data-type="scene">+ Nueva escena</button></div>';var display=beat?beatScenes.concat(unassigned):scenes;if(!display.length){h+='<div class="empty-state"><div class="empty-state-desc">No hay escenas. Crea la primera.</div></div>'}else{h+='<div class="scene-grid">';display.forEach(function(s){var tc=s.type==='combat'?'combat':'social';h+='<div class="scene-card '+tc+'" data-action="select-scene" data-id="'+s.id+'"><span class="scene-badge '+(s.type==='combat'?'badge-combat':'badge-social')+'">'+(s.type==='combat'?'Combate':'Narrativa')+'</span>';if(s.sporadic)h+=' <span style="font-size:11px;color:var(--gold)">(esporádica)</span>';h+='<div class="scene-name">'+s.name+'</div>';if(s.setup&&s.setup.hook)h+='<div class="scene-detail">'+s.setup.hook+'</div>';if(s.type==='combat')h+='<button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center" data-action="start-combat" data-id="'+s.id+'">Iniciar combate</button>';if(s.debrief&&s.debrief.consequences)(s.debrief.consequences).forEach(function(c){h+='<div class="scene-flag flag-consequence">⚠ '+c+'</div>'});h+='</div>'});h+='</div>'}el.innerHTML=h}
+function addBeat(){var camp=dbLoad('campaign');if(!camp)return;var name=prompt('Nombre del beat:');if(!name)return;if(!camp.arcs)camp.arcs=[{id:'arc-1',name:'Arco I',beats:[]}];camp.arcs[0].beats.push({id:'beat-'+uid(),name:name,scenes:[]});dbSave('campaign',camp);renderCampaign()}
 
-/* ══════════════════════════════════════════════
-   RENDER: CAMPAIGN
-   ══════════════════════════════════════════════ */
-function renderCampaign(){
-  var el=document.getElementById('campaign-content');if(!el)return;
-  var camp=dbLoadSingle('campaign');
-  if(!camp){
-    el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay campaña activa</div><div class="empty-state-desc">Crea una campaña para empezar a planear tus sesiones y escenas.</div><button class="btn btn-primary" onclick="openModal(\'campaign\',null)">Crear campaña</button></div>';
-    return;
-  }
-  var h='<div class="section-label">'+camp.name+'</div>';
-  var arcs=camp.arcs||[];
-  var arc=arcs[0]||{beats:[]};
-  // Beats
-  h+='<div class="beats-row">';
-  (arc.beats||[]).forEach(function(b,i){
-    var cls='beat-card'+(i===selectedBeatIdx?' active':'');
-    h+='<div class="'+cls+'" onclick="selectedBeatIdx='+i+';renderCampaign()">';
-    h+='<div class="beat-num">BEAT '+(i+1)+'</div><div class="beat-name">'+b.name+'</div></div>';
-    if(i<arc.beats.length-1)h+='<div class="beat-connector">—</div>';
-  });
-  h+='<div style="flex-shrink:0;display:flex;align-items:center"><button class="btn" onclick="addBeat()">+</button></div>';
-  h+='</div>';
-  // Scenes for selected beat
-  var scenes=dbGetAll('scenes');
-  var beat=arc.beats[selectedBeatIdx];
-  var beatScenes=beat?scenes.filter(function(s){return(beat.scenes||[]).indexOf(s.id)>-1}):[];
-  // Also show unassigned scenes
-  var allAssigned=[];arcs.forEach(function(a){(a.beats||[]).forEach(function(b){allAssigned=allAssigned.concat(b.scenes||[])})});
-  var unassigned=scenes.filter(function(s){return allAssigned.indexOf(s.id)===-1});
-  h+='<div class="scenes-header flex-between"><div class="section-label" style="margin:0">ESCENAS'+(beat?' — '+beat.name:'')+'</div><button class="btn" onclick="openModal(\'scene\',null)">+ Nueva escena</button></div>';
-  var displayScenes=beat?beatScenes:unassigned;
-  if(displayScenes.length===0){
-    h+='<div class="empty-state"><div class="empty-state-desc">'+(beat?'No hay escenas en este beat.':'No hay escenas sin asignar.')+'</div></div>';
-  } else {
-    h+='<div class="scene-grid">';
-    displayScenes.forEach(function(s){
-      var typeClass=s.type==='combat'?'combat':'social';
-      var badge=s.type==='combat'?'badge-combat':'badge-social';
-      var badgeText=s.type==='combat'?'Combate':'Narrativa';
-      var statusCls=s.debrief?'status-debrief':(s.status==='active'?'status-active':'status-ready');
-      var statusText=s.debrief?'✓ Debrief':(s.status==='active'?'▶ Activa':'Lista');
-      h+='<div class="scene-card '+typeClass+'" onclick="selectedSceneId=\''+s.id+'\';nav(\'scenes\')">';
-      h+='<span class="scene-badge '+badge+'">'+badgeText+'</span>';
-      if(s.sporadic)h+=' <span style="font-size:11px;color:var(--gold)">(esporádica)</span>';
-      h+='<span class="scene-status '+statusCls+'">'+statusText+'</span>';
-      h+='<div class="scene-name">'+s.name+'</div>';
-      if(s.setup&&s.setup.hook)h+='<div class="scene-detail">'+s.setup.hook+'</div>';
-      if(s.type==='combat')h+='<button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center" onclick="event.stopPropagation();startCombatFromScene(\''+s.id+'\')">Iniciar combate</button>';
-      // Debrief consequences
-      if(s.debrief&&s.debrief.consequences&&s.debrief.consequences.length>0){
-        s.debrief.consequences.forEach(function(c){
-          h+='<div class="scene-flag flag-consequence">⚠ '+c+'</div>';
-        });
-      }
-      h+='</div>';
-    });
-    h+='</div>';
-  }
-  // Unassigned scenes section
-  if(beat&&unassigned.length>0){
-    h+='<div class="section-label" style="margin-top:20px">ESCENAS SIN ASIGNAR</div><div class="scene-grid">';
-    unassigned.forEach(function(s){
-      h+='<div class="scene-card social" onclick="selectedSceneId=\''+s.id+'\';nav(\'scenes\')"><div class="scene-name">'+s.name+'</div><div class="scene-detail">'+((s.setup&&s.setup.hook)||'Sin hook')+'</div></div>';
-    });
-    h+='</div>';
-  }
-  el.innerHTML=h;
-}
+/* LIBRARY */
+function renderLibrary(){var el=document.getElementById('library-content');if(!el)return;var tabs=[{id:'npcs',l:'NPCs'},{id:'villains',l:'Villanos'},{id:'bestiary',l:'Bestiario'},{id:'loot',l:'Loot'}];var h='<div class="section-label">BIBLIOTECA</div><div class="lib-category-tabs">';tabs.forEach(function(t){h+='<div class="lib-cat-tab'+(selectedLibTab===t.id?' active':'')+'" data-action="nav" data-type="library" onclick="selectedLibTab=\''+t.id+'\';selectedLibItem=null;renderLibrary()">'+t.l+' <span class="tab-count">'+dbGetAll(t.id).length+'</span></div>'});h+='</div>';var tl={npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item'}[selectedLibTab];h+='<div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="'+selectedLibTab+'">+ Nuevo '+tl+'</button></div>';h+='<div class="library-layout"><div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar..." oninput="filterLib(this.value)"></div><div id="lib-items">';h+=renderLibList(dbGetAll(selectedLibTab));h+='</div></div><div class="library-detail" id="lib-detail">';h+=selectedLibItem?renderLibDetail(selectedLibTab,selectedLibItem):'<div class="empty-state"><div class="empty-state-desc">Selecciona un item</div></div>';h+='</div></div>';el.innerHTML=h}
+function renderLibList(items){if(!items.length)return'<div class="empty-state"><div class="empty-state-desc">Vacío</div></div>';var h='';items.forEach(function(item){h+='<div class="entity-list-item'+(selectedLibItem===item.id?' selected':'')+'" data-action="select-lib" data-id="'+item.id+'"><div><div style="font-size:14px;font-weight:600">'+item.name+'</div>';if(item.role)h+='<div style="font-size:12px;color:var(--ink3)">'+item.role+'</div>';if(item.type&&!item.role)h+='<div style="font-size:12px;color:var(--ink3)">'+item.type+(item.difficulty?' · '+diffLabel(item.difficulty):'')+'</div>';h+='</div><button class="delete-btn" data-action="delete-item" data-type="'+selectedLibTab+'" data-id="'+item.id+'" title="Eliminar">×</button></div>'});return h}
+function renderLibDetail(table,id){var item=dbGetById(table,id);if(!item)return'';var h='<div style="display:flex;justify-content:space-between;align-items:start"><div class="detail-header"><div class="detail-name">'+item.name+'</div>';if(item.role)h+='<div class="detail-role">'+item.role+'</div>';h+='</div><button class="btn" data-action="open-modal" data-type="'+table+'" data-id="'+item.id+'">Editar</button></div>';var fields=[];if(table==='npcs')fields=[['MOTIVACIÓN','motivation'],['LO QUE SABE','knows'],['LO QUE QUIERE','wants']];if(table==='villains'){fields=[['MOTIVACIÓN','motivation'],['ARCO','arc']];if(item.stats)h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+(item.stats.hp||0)+'</span><span class="creature-stat dmg">'+( item.stats.dmg||'?')+'</span></div></div>'}if(table==='bestiary'){fields=[['DESCRIPCIÓN','description']];h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+(item.hp||0)+'</span><span class="creature-stat dmg">'+(item.dmg||'?')+'</span></div></div>'}if(table==='loot')fields=[['DESCRIPCIÓN','description'],['EFECTO','effect']];fields.forEach(function(f){if(item[f[1]])h+='<div class="detail-section"><div class="detail-section-label">'+f[0]+'</div><div class="detail-section-value">'+item[f[1]]+'</div></div>'});if(item.voice)h+='<div class="detail-voice">"'+item.voice+'"</div>';if(item.abilities&&item.abilities.length){h+='<div class="detail-section"><div class="detail-section-label">HABILIDADES</div>';item.abilities.forEach(function(a){h+='<div class="ability-line"><span class="ability-name">'+a.name+'</span> ['+a.type+']<div style="font-size:13px;color:var(--ink3)">'+a.desc+'</div></div>'});h+='</div>'}return h}
+function filterLib(q){var items=dbGetAll(selectedLibTab);if(q)items=items.filter(function(i){return i.name.toLowerCase().indexOf(q.toLowerCase())>-1});document.getElementById('lib-items').innerHTML=renderLibList(items)}
+function toggleMove(vid,text){var v=dbGetById('villains',vid);if(!v)return;v.moves.forEach(function(m){if(m.text===text)m.done=!m.done});dbUpdate('villains',vid,{moves:v.moves});renderLibrary()}
 
-function addBeat(){
-  var camp=dbLoadSingle('campaign');
-  if(!camp)return;
-  var name=prompt('Nombre del beat:');
-  if(!name)return;
-  if(!camp.arcs)camp.arcs=[{id:'arc-1',name:'Arco I',beats:[]}];
-  camp.arcs[0].beats.push({id:'beat-'+uid(),name:name,order:camp.arcs[0].beats.length+1,scenes:[]});
-  dbSaveSingle('campaign',camp);
-  renderCampaign();
-}
+/* PLAYERS */
+function renderPlayers(){var el=document.getElementById('players-content');if(!el)return;var pls=dbGetAll('players');if(!pls.length){el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay jugadores</div><div class="empty-state-desc">Agrega a los héroes de tu mesa.</div><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div>';return}var h='<div class="section-label">PERSONAJES</div><div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div><div class="player-grid">';pls.forEach(function(p){var r=resolvePlayer(p);h+='<div class="player-card" style="border-color:'+r.factionColor+'"><div class="player-card-header"><div class="player-avatar" style="background:'+r.bg+';color:'+r.fg+'">'+r.initial+'</div><div><div class="player-card-name">'+r.name+'</div><div class="player-card-class">'+r.cls+(r.sub?' · '+r.sub:'')+(r.kit?' · Kit '+r.kit:'')+' · Plano '+r.plano+'</div></div></div>';h+='<div class="player-meta"><span class="player-tag faction">'+r.faction+'</span><span class="player-tag">HP '+r.hp+'</span><span class="player-tag">Aen +'+r.aenRegen+'/turno</span></div>';if(r.backstory)h+='<div style="font-size:13px;color:var(--ink3);margin-top:8px;line-height:1.5">'+r.backstory+'</div>';h+='<div class="echo-tracker"><div class="echo-tracker-label">ECHO</div><div class="echo-dots">';for(var i=0;i<5;i++)h+='<div class="echo-dot'+(i<r.echo?' filled':'')+'">✦</div>';h+='</div><button class="echo-btn" data-action="add-echo" data-id="'+p.id+'" style="padding:4px 10px;font-size:12px;min-height:32px">+1</button></div>';h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn" data-action="open-modal" data-type="players" data-id="'+p.id+'">Editar</button><button class="delete-btn" data-action="delete-item" data-type="players" data-id="'+p.id+'">×</button></div></div>'});h+='</div>';el.innerHTML=h}
+function adjustEcho(pid,d){var p=dbGetById('players',pid);if(!p)return;p.echo=Math.max(0,Math.min(5,(p.echo||0)+d));dbUpdate('players',pid,{echo:p.echo});renderPlayers()}
 
-/* ══════════════════════════════════════════════
-   RENDER: LIBRARY
-   ══════════════════════════════════════════════ */
-function renderLibrary(){
-  var el=document.getElementById('library-content');if(!el)return;
-  var tabs=[{id:'npcs',label:'NPCs'},{id:'villains',label:'Villanos'},{id:'bestiary',label:'Bestiario'},{id:'loot',label:'Loot'}];
-  var h='<div class="section-label">BIBLIOTECA</div>';
-  h+='<div class="lib-category-tabs">';
-  tabs.forEach(function(t){
-    var count=dbGetAll(t.id).length;
-    h+='<div class="lib-cat-tab'+(selectedLibTab===t.id?' active':'')+'" onclick="selectedLibTab=\''+t.id+'\';selectedLibItem=null;renderLibrary()">'+t.label+' <span class="tab-count">'+count+'</span></div>';
-  });
-  h+='</div>';
-  var items=dbGetAll(selectedLibTab);
-  var tableLabel={npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item'}[selectedLibTab];
-  h+='<div style="margin-bottom:12px"><button class="btn btn-primary" onclick="openModal(\''+selectedLibTab+'\',null)">+ Nuevo '+tableLabel+'</button></div>';
-  h+='<div class="library-layout">';
-  // List
-  h+='<div class="library-list">';
-  h+='<div class="library-search"><input type="text" id="lib-search" placeholder="Buscar..." oninput="filterLibrary(this.value)"></div>';
-  h+='<div id="lib-list-items">';
-  h+=renderLibList(items);
-  h+='</div></div>';
-  // Detail
-  h+='<div class="library-detail" id="lib-detail">';
-  if(selectedLibItem){h+=renderLibDetail(selectedLibTab,selectedLibItem)}
-  else{h+='<div class="empty-state"><div class="empty-state-desc">Selecciona un item de la lista</div></div>'}
-  h+='</div></div>';
-  el.innerHTML=h;
-}
+/* SCENE BUILDER */
+function renderSceneBuilder(sid){var el=document.getElementById('scenes-content');if(!el)return;if(!sid){el.innerHTML='<div class="empty-state"><div class="empty-state-title">Scene Builder</div><div class="empty-state-desc">Selecciona una escena desde Campaña o crea una nueva.</div><button class="btn btn-primary" data-action="open-modal" data-type="scene">+ Nueva escena</button></div>';return}var s=dbGetById('scenes',sid);if(!s){el.innerHTML='<div class="empty-state">Escena no encontrada</div>';return}var su=s.setup||{};var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="detail-name">'+s.name+'</div><div style="display:flex;gap:8px"><span class="scene-badge '+(s.type==='combat'?'badge-combat':'badge-social')+'">'+(s.type==='combat'?'Combate':'Narrativa')+'</span><button class="btn" data-action="open-modal" data-type="scene" data-id="'+s.id+'">Editar</button><button class="btn" style="color:var(--red);border-color:var(--red)" data-action="delete-item" data-type="scenes" data-id="'+s.id+'">Eliminar</button></div></div>';[['HOOK',su.hook],['CONFLICTO',su.conflict],['BEAT DE SALIDA',su.exit]].forEach(function(f){if(f[1])h+='<div class="form-section"><div class="form-label">'+f[0]+'</div><div style="font-size:14px;color:var(--ink2);line-height:1.6">'+f[1]+'</div></div>'});if(su.stakesFail||su.stakesWin){h+='<div class="form-section"><div class="form-label">STAKES</div><div class="stakes-row"><div class="stake-box stake-fail"><div class="stake-label">SI FALLAN</div>'+(su.stakesFail||'—')+'</div><div class="stake-box stake-win"><div class="stake-label">SI TRIUNFAN</div>'+(su.stakesWin||'—')+'</div></div></div>'}if(s.type==='combat')h+='<button class="btn btn-primary" style="width:100%;justify-content:center;margin:16px 0;padding:16px" data-action="start-combat" data-id="'+s.id+'">Iniciar combate</button>';h+='<div style="margin-top:24px;padding:16px;background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg)"><div class="form-label">DEBRIEF</div><textarea class="form-input" id="debrief-text" placeholder="¿Qué pasó realmente?">'+(s.debrief&&s.debrief.whatHappened||'')+'</textarea><textarea class="form-input" id="debrief-cons" style="margin-top:8px" placeholder="Consecuencias (una por línea)">'+(s.debrief&&s.debrief.consequences?s.debrief.consequences.join('\n'):'')+'</textarea><button class="btn btn-primary" style="margin-top:10px" data-action="save-debrief" data-id="'+s.id+'">Guardar debrief</button></div>';el.innerHTML=h}
+function saveDebrief(sid){dbUpdate('scenes',sid,{debrief:{whatHappened:document.getElementById('debrief-text').value,consequences:document.getElementById('debrief-cons').value.split('\n').filter(function(c){return c.trim()})},status:'debriefed'});renderSceneBuilder(sid)}
 
-function renderLibList(items){
-  if(items.length===0)return'<div class="empty-state"><div class="empty-state-desc">Vacío</div></div>';
-  var h='';
-  items.forEach(function(item){
-    var sel=selectedLibItem===item.id?' selected':'';
-    h+='<div class="entity-list-item'+sel+'" onclick="selectedLibItem=\''+item.id+'\';renderLibrary()">';
-    h+='<div><div style="font-size:14px;font-weight:600">'+item.name+'</div>';
-    if(item.role)h+='<div style="font-size:12px;color:var(--ink3)">'+item.role+'</div>';
-    if(item.type)h+='<div style="font-size:12px;color:var(--ink3)">'+item.type+(item.difficulty?' · '+diffLabel(item.difficulty):'')+'</div>';
-    if(item.rarity)h+='<div style="font-size:12px;color:var(--ink3)">'+item.type+' · <span class="'+rarityClass(item.rarity)+'">'+item.rarity+'</span></div>';
-    h+='</div>';
-    h+='<button class="delete-btn" onclick="event.stopPropagation();if(confirm(\'¿Eliminar '+item.name+'?\')){dbDelete(\''+selectedLibTab+'\',\''+item.id+'\');selectedLibItem=null;renderLibrary()}" title="Eliminar">×</button>';
-    h+='</div>';
-  });
-  return h;
-}
-
-function renderLibDetail(table,id){
-  var item=dbGetById(table,id);
-  if(!item)return'<div class="empty-state">No encontrado</div>';
-  var h='<div style="display:flex;justify-content:space-between;align-items:start"><div class="detail-header"><div class="detail-name">'+item.name+'</div>';
-  if(item.role)h+='<div class="detail-role">'+item.role+'</div>';
-  if(item.type&&table==='bestiary')h+='<div class="detail-role">'+item.type+' · <span class="difficulty-tag diff-'+(item.difficulty||'medium')+'">'+diffLabel(item.difficulty)+'</span></div>';
-  if(item.rarity)h+='<div class="detail-role">'+item.type+' · <span class="loot-rarity '+rarityClass(item.rarity)+'">'+item.rarity+'</span></div>';
-  h+='</div><button class="btn" onclick="openModal(\''+table+'\',\''+item.id+'\')">Editar</button></div>';
-  // Fields based on table
-  var fields=[];
-  if(table==='npcs')fields=[['MOTIVACIÓN','motivation'],['LO QUE SABE','knows'],['LO QUE QUIERE','wants']];
-  if(table==='villains'){fields=[['MOTIVACIÓN','motivation'],['ARCO NARRATIVO','arc']];
-    if(item.stats)h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+item.stats.hp+'</span><span class="creature-stat dmg">Daño '+item.stats.dmg+'</span>'+(item.stats.special?'<span class="creature-stat special">'+item.stats.special+'</span>':'')+'</div></div>';
-  }
-  if(table==='bestiary'){fields=[['DESCRIPCIÓN','description']];
-    if(item.hp)h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+item.hp+'</span><span class="creature-stat dmg">Daño '+item.dmg+'</span>'+(item.resist?'<span class="creature-stat">Resist: '+item.resist+'</span>':'')+'</div></div>';
-    if(item.terrain)h+='<div class="detail-section"><div class="detail-section-label">TERRENO</div><div>'+item.terrain.join(' · ')+'</div></div>';
-  }
-  if(table==='loot'){fields=[['DESCRIPCIÓN','description'],['EFECTO','effect']]}
-  fields.forEach(function(f){
-    if(item[f[1]])h+='<div class="detail-section"><div class="detail-section-label">'+f[0]+'</div><div class="detail-section-value">'+item[f[1]]+'</div></div>';
-  });
-  if(item.voice)h+='<div class="detail-voice">"'+item.voice+'"</div>';
-  if(item.abilities&&item.abilities.length>0){
-    h+='<div class="detail-section"><div class="detail-section-label">HABILIDADES</div>';
-    item.abilities.forEach(function(a){h+='<div class="ability-line"><span class="ability-name">'+a.name+'</span> <span style="color:var(--ink4)">['+a.type+']</span><div style="font-size:13px;color:var(--ink3)">'+a.desc+'</div></div>'});
-    h+='</div>';
-  }
-  if(item.moves){
-    h+='<div class="detail-section"><div class="detail-section-label">MOVES ENTRE SESIONES</div>';
-    item.moves.forEach(function(m){h+='<div class="move-item"><input type="checkbox" '+(m.done?'checked':'')+' onchange="toggleMove(\''+item.id+'\',\''+m.text.replace(/'/g,"\\'")+'\')">'+'<span class="'+(m.done?'move-done':'')+'">'+m.text+'</span></div>'});
-    h+='</div>';
-  }
-  return h;
-}
-
-function toggleMove(villainId,moveText){
-  var v=dbGetById('villains',villainId);if(!v)return;
-  v.moves.forEach(function(m){if(m.text===moveText)m.done=!m.done});
-  dbUpdate('villains',villainId,{moves:v.moves});
-  renderLibrary();
-}
-
-function filterLibrary(q){
-  var items=dbGetAll(selectedLibTab);
-  if(q)items=items.filter(function(i){return i.name.toLowerCase().indexOf(q.toLowerCase())>-1});
-  document.getElementById('lib-list-items').innerHTML=renderLibList(items);
-}
-
-/* ══════════════════════════════════════════════
-   RENDER: PLAYERS
-   ══════════════════════════════════════════════ */
-function renderPlayers(){
-  var el=document.getElementById('players-content');if(!el)return;
-  var pls=dbGetAll('players');
-  if(pls.length===0){
-    el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay jugadores</div><div class="empty-state-desc">Agrega a los héroes de tu mesa.</div><button class="btn btn-primary" onclick="openModal(\'players\',null)">+ Agregar jugador</button></div>';
-    return;
-  }
-  var h='<div class="section-label">PERSONAJES JUGADORES</div><div style="margin-bottom:12px"><button class="btn btn-primary" onclick="openModal(\'players\',null)">+ Agregar jugador</button></div>';
-  h+='<div class="player-grid">';
-  pls.forEach(function(p){
-    var r=resolvePlayer(p);
-    h+='<div class="player-card" style="border-color:'+(r.factionColor||'var(--border)')+'">';
-    h+='<div class="player-card-header"><div class="player-avatar" style="background:'+r.bg+';color:'+r.fg+'">'+r.initial+'</div>';
-    h+='<div><div class="player-card-name">'+r.name+'</div><div class="player-card-class">'+r.cls+(r.sub?' · '+r.sub:'')+(r.kit?' · Kit '+r.kit:'')+' · Plano '+r.plano+'</div></div></div>';
-    h+='<div class="player-meta"><span class="player-tag faction">'+r.faction+'</span><span class="player-tag">HP '+r.hp+'</span><span class="player-tag">Aen +'+r.aenRegen+'/turno</span></div>';
-    if(r.backstory)h+='<div style="font-size:13px;color:var(--ink3);margin-top:8px;line-height:1.5">'+r.backstory+'</div>';
-    // Echo points
-    h+='<div class="echo-tracker"><div class="echo-tracker-label">ECHO</div><div class="echo-dots">';
-    for(var i=0;i<5;i++)h+='<div class="echo-dot'+(i<r.echo?' filled':'')+'">✦</div>';
-    h+='</div><button class="echo-btn" onclick="adjustEcho(\''+p.id+'\',1)" style="padding:4px 10px;font-size:12px;min-height:32px">+1</button></div>';
-    // Actions
-    h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn" onclick="openModal(\'players\',\''+p.id+'\')">Editar</button><button class="delete-btn" onclick="if(confirm(\'¿Eliminar '+r.name+'?\')){dbDelete(\'players\',\''+p.id+'\');renderPlayers()}">×</button></div>';
-    h+='</div>';
-  });
-  h+='</div>';
-  el.innerHTML=h;
-}
-
-function adjustEcho(pid,delta){
-  var p=dbGetById('players',pid);if(!p)return;
-  p.echo=Math.max(0,Math.min(5,(p.echo||0)+delta));
-  dbUpdate('players',pid,{echo:p.echo});
-  renderPlayers();
-}
-
-/* ══════════════════════════════════════════════
-   RENDER: SCENE BUILDER
-   ══════════════════════════════════════════════ */
-function renderSceneBuilder(sceneId){
-  var el=document.getElementById('scenes-content');if(!el)return;
-  if(!sceneId){
-    el.innerHTML='<div class="empty-state"><div class="empty-state-title">Scene Builder</div><div class="empty-state-desc">Selecciona una escena desde Campaña o crea una nueva.</div><button class="btn btn-primary" onclick="openModal(\'scene\',null)">+ Nueva escena</button></div>';
-    return;
-  }
-  var s=dbGetById('scenes',sceneId);
-  if(!s){el.innerHTML='<div class="empty-state">Escena no encontrada</div>';return}
-  var setup=s.setup||{};
-  var h='<div class="section-label">SCENE BUILDER</div>';
-  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="detail-name">'+s.name+'</div>';
-  h+='<div style="display:flex;gap:8px"><span class="scene-badge '+(s.type==='combat'?'badge-combat':'badge-social')+'">'+(s.type==='combat'?'Combate':'Narrativa')+'</span>';
-  h+='<button class="btn" onclick="openModal(\'scene\',\''+s.id+'\')">Editar</button>';
-  h+='<button class="btn" style="color:var(--red);border-color:var(--red)" onclick="if(confirm(\'¿Eliminar esta escena?\')){dbDelete(\'scenes\',\''+s.id+'\');selectedSceneId=null;nav(\'campaign\')}">Eliminar</button></div></div>';
-  // Setup display
-  var fields=[['HOOK',setup.hook],['CONFLICTO',setup.conflict],['BEAT DE SALIDA',setup.exit]];
-  fields.forEach(function(f){if(f[1])h+='<div class="form-section"><div class="form-label">'+f[0]+'</div><div style="font-size:14px;color:var(--ink2);line-height:1.6">'+f[1]+'</div></div>'});
-  if(setup.stakesFail||setup.stakesWin){
-    h+='<div class="form-section"><div class="form-label">STAKES</div><div class="stakes-row">';
-    h+='<div class="stake-box stake-fail"><div class="stake-label">SI FALLAN</div><div style="font-size:14px">'+(setup.stakesFail||'—')+'</div></div>';
-    h+='<div class="stake-box stake-win"><div class="stake-label">SI TRIUNFAN</div><div style="font-size:14px">'+(setup.stakesWin||'—')+'</div></div></div></div>';
-  }
-  // Participants
-  if(s.participants){
-    var npcs=(s.participants.npcIds||[]).map(function(id){return dbGetById('npcs',id)}).filter(Boolean);
-    if(npcs.length>0){
-      h+='<div class="form-section"><div class="form-label">NPCs</div>';
-      npcs.forEach(function(n){h+='<div class="npc-card"><div class="npc-name">'+n.name+'</div><div class="npc-role">'+(n.role||'')+'</div>'+(n.voice?'<div class="npc-voice">"'+n.voice+'"</div>':'')+'</div>'});
-      h+='</div>';
-    }
-    var creatures=(s.participants.creatureIds||[]);
-    if(creatures.length>0){
-      h+='<div class="form-section"><div class="form-label">CRIATURAS</div>';
-      creatures.forEach(function(ci){
-        var c=dbGetById('bestiary',ci.creatureId);
-        if(c)h+='<div class="creature-card"><div style="display:flex;justify-content:space-between"><div><span class="creature-name">'+c.name+'</span><span style="color:var(--ink3)"> ×'+ci.qty+'</span></div><span class="difficulty-tag diff-'+(c.difficulty||'medium')+'">'+diffLabel(c.difficulty)+'</span></div><div class="creature-stats-row"><span class="creature-stat hp">HP '+c.hp+'</span><span class="creature-stat dmg">'+c.dmg+'</span></div></div>';
-      });
-      h+='</div>';
-    }
-  }
-  // Lair actions
-  if(s.lairActions&&s.lairActions.length>0){
-    h+='<div class="form-section"><div class="form-label">LAIR ACTIONS</div><div class="lair-section">';
-    s.lairActions.forEach(function(la){h+='<div style="padding:6px 0;font-size:14px">· '+la+'</div>'});
-    h+='</div></div>';
-  }
-  // Combat start button
-  if(s.type==='combat')h+='<button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px;padding:16px" onclick="startCombatFromScene(\''+s.id+'\')">Iniciar combate</button>';
-  // Debrief section
-  h+='<div style="margin-top:24px;padding:16px;background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg)">';
-  h+='<div class="form-label">DEBRIEF</div>';
-  if(s.debrief){
-    if(s.debrief.whatHappened)h+='<div style="font-size:14px;color:var(--ink2);margin-bottom:12px;line-height:1.6">'+s.debrief.whatHappened+'</div>';
-    if(s.debrief.consequences)s.debrief.consequences.forEach(function(c){h+='<div class="scene-flag flag-consequence" style="margin-bottom:6px">⚠ '+c+'</div>'});
-  }
-  h+='<textarea class="form-input" id="debrief-text" placeholder="¿Qué pasó realmente?">'+(s.debrief&&s.debrief.whatHappened?s.debrief.whatHappened:'')+'</textarea>';
-  h+='<textarea class="form-input" id="debrief-consequences" style="margin-top:8px" placeholder="Consecuencias (una por línea)">'+(s.debrief&&s.debrief.consequences?s.debrief.consequences.join('\n'):'')+'</textarea>';
-  h+='<button class="btn btn-primary" style="margin-top:10px" onclick="saveDebrief(\''+s.id+'\')">Guardar debrief</button>';
-  h+='</div>';
-  el.innerHTML=h;
-}
-
-function saveDebrief(sceneId){
-  var text=document.getElementById('debrief-text').value;
-  var cons=document.getElementById('debrief-consequences').value.split('\n').filter(function(c){return c.trim()});
-  dbUpdate('scenes',sceneId,{debrief:{whatHappened:text,consequences:cons},status:'debriefed'});
-  renderSceneBuilder(sceneId);
-}
-
-/* ══════════════════════════════════════════════
-   COMBAT TRACKER
-   ══════════════════════════════════════════════ */
-function startCombatFromScene(sceneId){
-  var scene=dbGetById('scenes',sceneId);if(!scene)return;
-  var units=[];expandedUnits={};
-  var pls=dbGetAll('players');
-  pls.forEach(function(p){
-    var r=resolvePlayer(p);
-    units.push({id:p.id,name:r.name,type:'player',initial:r.initial,bg:r.bg,fg:r.fg,cls:r.cls,plano:r.plano,abilities:r.abilities,hp:0,hpMax:0,actions:{mov:false,act1:false,act2:false},conditions:[]});
-  });
-  if(scene.participants&&scene.participants.creatureIds){
-    scene.participants.creatureIds.forEach(function(ci){
-      var c=dbGetById('bestiary',ci.creatureId);if(!c)return;
-      for(var i=1;i<=ci.qty;i++){
-        units.push({id:c.id+'-'+i,name:c.name+(ci.qty>1?' #'+i:''),type:'creature',hp:c.hp,hpMax:c.hp,dmg:c.dmg||'',resist:c.resist||'',diff:c.difficulty||'medium',abilities:c.abilities||[],actions:{mov:false,act1:false,act2:false},conditions:[]});
-      }
-    });
-  }
-  combat={name:scene.name,sceneId:sceneId,round:1,turnIndex:0,units:units,order:units.map(function(u){return u.id}),lairActions:(scene.lairActions||[]).map(function(la,i){return{id:'la'+i,text:la,used:false}}),log:[]};
-  nav('session');
-}
-
+/* COMBAT TRACKER */
+function startCombatFromScene(sid){var scene=dbGetById('scenes',sid);if(!scene)return;var units=[];expandedUnits={};dbGetAll('players').forEach(function(p){var r=resolvePlayer(p);units.push({id:p.id,name:r.name,type:'player',initial:r.initial,bg:r.bg,fg:r.fg,cls:r.cls,plano:r.plano,abilities:r.abilities,hp:0,hpMax:0,actions:{mov:false,act1:false,act2:false}})});if(scene.participants&&scene.participants.creatureIds)scene.participants.creatureIds.forEach(function(ci){var c=dbGetById('bestiary',ci.creatureId);if(!c)return;for(var i=1;i<=ci.qty;i++)units.push({id:c.id+'-'+i,name:c.name+(ci.qty>1?' #'+i:''),type:'creature',hp:c.hp,hpMax:c.hp,dmg:c.dmg||'',resist:c.resist||'',diff:c.difficulty||'medium',abilities:c.abilities||[],actions:{mov:false,act1:false,act2:false}})});combat={name:scene.name,round:1,turnIndex:0,units:units,order:units.map(function(u){return u.id}),lairActions:(scene.lairActions||[]).map(function(la,i){return{id:'la'+i,text:la,used:false}})};nav('session')}
 function endCombat(){combat=null;expandedUnits={};renderSession()}
-function nextTurn(){
-  if(!combat)return;
-  combat.turnIndex=(combat.turnIndex+1)%combat.order.length;
-  if(combat.turnIndex===0){combat.round++;combat.units.forEach(function(u){u.actions={mov:false,act1:false,act2:false}});combat.lairActions.forEach(function(la){la.used=false})}
-  var nx=combat.units.find(function(u){return u.id===combat.order[combat.turnIndex]});
-  if(nx)nx.actions={mov:false,act1:false,act2:false};
-  renderSession();
-}
-function adjustHp(uid,delta){var u=combat.units.find(function(u){return u.id===uid});if(u)u.hp=Math.max(0,Math.min(u.hpMax,u.hp+delta));renderSession()}
-function toggleAction(uid,act){var u=combat.units.find(function(u){return u.id===uid});if(!u)return;u.actions[act]=!u.actions[act];if(u.actions.mov&&u.actions.act1&&u.actions.act2)setTimeout(function(){nextTurn()},400);else renderSession()}
+function nextTurn(){if(!combat)return;combat.turnIndex=(combat.turnIndex+1)%combat.order.length;if(combat.turnIndex===0){combat.round++;combat.units.forEach(function(u){u.actions={mov:false,act1:false,act2:false}});combat.lairActions.forEach(function(la){la.used=false})}var nx=combat.units.find(function(u){return u.id===combat.order[combat.turnIndex]});if(nx)nx.actions={mov:false,act1:false,act2:false};renderSession()}
+function adjustHp(uid,d){var u=combat.units.find(function(u){return u.id===uid});if(u)u.hp=Math.max(0,Math.min(u.hpMax,u.hp+d));renderSession()}
+function toggleAction(uid,act){var u=combat.units.find(function(u){return u.id===uid});if(!u)return;u.actions[act]=!u.actions[act];if(u.actions.mov&&u.actions.act1&&u.actions.act2)setTimeout(nextTurn,400);else renderSession()}
 function toggleExpand(uid){expandedUnits[uid]=!expandedUnits[uid];renderSession()}
 function useLairAction(lid){var la=combat.lairActions.find(function(l){return l.id===lid});if(la)la.used=true;renderSession()}
-function addEchoTracker(pid){var p=dbGetById('players',pid);if(p&&(p.echo||0)<5){p.echo=(p.echo||0)+1;dbUpdate('players',pid,{echo:p.echo})}renderSession()}
+function addEchoTracker(pid){var p=dbGetById('players',pid);if(p&&(p.echo||0)<5){dbUpdate('players',pid,{echo:(p.echo||0)+1})}renderSession()}
 
-function renderSession(){
-  var el=document.getElementById('session-content');if(!el)return;
-  if(!combat){
-    el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay combate activo</div><div class="empty-state-desc">Inicia un combate desde una escena de tipo Combate en la vista de Campaña.</div></div>';
-    return;
-  }
-  var h='';
-  h+='<div class="tracker-bar"><div style="font-size:17px;font-weight:700;font-family:var(--serif);flex:1">'+combat.name+'</div>';
-  h+='<div class="tracker-stat"><div class="tracker-stat-label">RONDA</div><div class="tracker-stat-value">'+combat.round+'</div></div>';
-  h+='<div class="tracker-stat"><div class="tracker-stat-label">TURNO</div><div class="tracker-stat-value">'+(combat.turnIndex+1)+'/'+combat.order.length+'</div></div>';
-  h+='<button class="btn btn-primary" onclick="nextTurn()">Siguiente →</button>';
-  h+='<button class="btn" onclick="endCombat()">Terminar</button></div>';
-  // Initiative
-  h+='<div class="initiative-bar" id="init-bar">';
-  combat.order.forEach(function(id,idx){
-    var u=combat.units.find(function(x){return x.id===id});
-    var cls='init-chip';
-    if(idx===combat.turnIndex)cls+=' active';
-    if(idx<combat.turnIndex)cls+=' done';
-    if(u.type==='creature'&&u.hp<=0)cls+=' dead';
-    if(u.type==='player')cls+=' player';
-    if(u.type==='player'&&idx>combat.turnIndex)cls+=' sinergia-eligible';
-    var lbl=u.type==='player'?u.initial:u.name.substring(0,8);
-    h+='<div class="'+cls+'" onclick="toggleExpand(\''+u.id+'\')" title="'+u.name+'">'+lbl+'</div>';
-  });
-  h+='</div>';
-  // Sinergia
-  var sp=[];combat.order.forEach(function(id,idx){var u=combat.units.find(function(x){return x.id===id});if(u.type==='player'&&idx>combat.turnIndex)sp.push(u.name)});
-  if(sp.length>0)h+='<div style="font-size:13px;color:var(--gold);margin-bottom:12px;padding:8px 14px;background:var(--gold-pale);border-radius:var(--r)">Sinergia: <strong>'+sp.join(', ')+'</strong></div>';
-  // Units
-  combat.order.forEach(function(id,idx){
-    var u=combat.units.find(function(x){return x.id===id});
-    var isAct=idx===combat.turnIndex;var isDead=u.type==='creature'&&u.hp<=0;var isExp=expandedUnits[u.id];
-    h+='<div class="unit-card-tracker'+(isAct?' active-unit':'')+(isDead?' dead-unit':'')+'">';
-    h+='<div class="unit-header"><div style="cursor:pointer;flex:1" onclick="toggleExpand(\''+u.id+'\')">';
-    if(u.type==='player'){h+='<div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+u.bg+';color:'+u.fg+'">'+u.initial+'</div><div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div><div class="unit-meta">'+u.cls+' · Plano '+u.plano+'</div></div></div>'}
-    else{h+='<div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div><div class="unit-meta">Daño '+u.dmg+(u.resist?' · Resist: '+u.resist:'')+' <span class="difficulty-tag diff-'+u.diff+'">'+diffLabel(u.diff)+'</span></div></div>'}
-    h+='</div>';
-    if(u.type==='creature'){h+='<div class="hp-controls"><input type="number" id="hp-'+u.id+'" placeholder="0" min="1"><button class="btn btn-damage" onclick="event.stopPropagation();var v=parseInt(document.getElementById(\'hp-'+u.id+'\').value)||0;adjustHp(\''+u.id+'\',-v);document.getElementById(\'hp-'+u.id+'\').value=\'\'">Daño</button><button class="btn btn-heal" onclick="event.stopPropagation();var v=parseInt(document.getElementById(\'hp-'+u.id+'\').value)||0;adjustHp(\''+u.id+'\',v);document.getElementById(\'hp-'+u.id+'\').value=\'\'">Sana</button></div>'}
-    h+='</div>';
-    if(u.type==='creature'){var pct=Math.round((u.hp/u.hpMax)*100);h+='<div class="hp-section"><div class="hp-display" style="color:'+getHpColor(pct)+'">'+u.hp+'<span style="font-size:13px;color:var(--ink4)">/'+u.hpMax+'</span></div><div class="hp-bar"><div class="hp-fill" style="width:'+pct+'%;background:'+getHpColor(pct)+'"></div></div></div>'}
-    h+='<div class="actions-row"><label class="action-check"><input type="checkbox" '+(u.actions.mov?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'mov\')"> Mov</label><label class="action-check"><input type="checkbox" '+(u.actions.act1?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act1\')"> Acción 1</label><label class="action-check"><input type="checkbox" '+(u.actions.act2?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act2\')"> Acción 2</label></div>';
-    if(isExp&&u.abilities&&u.abilities.length>0){h+='<div class="abilities-compact"><div class="form-label" style="margin-bottom:6px">HABILIDADES</div>';u.abilities.forEach(function(a){h+='<div class="ability-line"><span class="ability-name">'+a.name+'</span> <span style="color:var(--ink4)">['+a.type+']</span>'+(a.cost?' <span style="color:var(--gold)">'+a.cost+'</span>':'')+'<div style="font-size:12px;color:var(--ink3)">'+a.desc+'</div></div>'});h+='</div>'}
-    h+='</div>';
-  });
-  // Lair
-  if(combat.lairActions.length>0){h+='<div class="lair-panel"><div class="form-label" style="color:var(--orange)">LAIR ACTIONS — Ronda '+combat.round+'</div>';combat.lairActions.forEach(function(la){h+='<div class="lair-action-btn'+(la.used?' used':'')+'" onclick="useLairAction(\''+la.id+'\')"><input type="checkbox" style="width:20px;height:20px;pointer-events:none" '+(la.used?'checked':'')+'> '+la.text+'</div>'});h+='</div>'}
-  // Echo
-  h+='<div class="echo-panel"><div class="form-label" style="color:var(--gold)">ECHO POINTS</div>';
-  dbGetAll('players').forEach(function(p){h+='<div class="echo-row"><div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+(p.bg||'#444')+';color:'+(p.fg||'#fff')+'">'+(p.initial||p.name.charAt(0))+'</div><div class="echo-player-name">'+p.name+'</div></div><div style="display:flex;align-items:center;gap:8px"><div class="echo-count">'+(p.echo||0)+'</div><button class="echo-btn" onclick="addEchoTracker(\''+p.id+'\')">+1</button></div></div>'});
-  h+='</div>';
-  el.innerHTML=h;
-}
+function renderSession(){var el=document.getElementById('session-content');if(!el)return;if(!combat){el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay combate activo</div><div class="empty-state-desc">Inicia un combate desde una escena de tipo Combate.</div></div>';return}var h='<div class="tracker-bar"><div style="font-size:17px;font-weight:700;font-family:var(--serif);flex:1">'+combat.name+'</div><div class="tracker-stat"><div class="tracker-stat-label">RONDA</div><div class="tracker-stat-value">'+combat.round+'</div></div><div class="tracker-stat"><div class="tracker-stat-label">TURNO</div><div class="tracker-stat-value">'+(combat.turnIndex+1)+'/'+combat.order.length+'</div></div><button class="btn btn-primary" data-action="next-turn">Siguiente →</button><button class="btn" data-action="end-combat">Terminar</button></div>';h+='<div class="initiative-bar">';combat.order.forEach(function(id,idx){var u=combat.units.find(function(x){return x.id===id});var cls='init-chip';if(idx===combat.turnIndex)cls+=' active';if(idx<combat.turnIndex)cls+=' done';if(u.type==='creature'&&u.hp<=0)cls+=' dead';if(u.type==='player')cls+=' player';if(u.type==='player'&&idx>combat.turnIndex)cls+=' sinergia-eligible';h+='<div class="'+cls+'" data-action="expand-unit" data-id="'+u.id+'" title="'+u.name+'">'+(u.type==='player'?u.initial:u.name.substring(0,8))+'</div>'});h+='</div>';var sp=[];combat.order.forEach(function(id,idx){var u=combat.units.find(function(x){return x.id===id});if(u.type==='player'&&idx>combat.turnIndex)sp.push(u.name)});if(sp.length)h+='<div style="font-size:13px;color:var(--gold);margin-bottom:12px;padding:8px 14px;background:var(--gold-pale);border-radius:var(--r)">Sinergia: <strong>'+sp.join(', ')+'</strong></div>';combat.order.forEach(function(id,idx){var u=combat.units.find(function(x){return x.id===id});var isAct=idx===combat.turnIndex,isDead=u.type==='creature'&&u.hp<=0,isExp=expandedUnits[u.id];h+='<div class="unit-card-tracker'+(isAct?' active-unit':'')+(isDead?' dead-unit':'')+'" data-action="expand-unit" data-id="'+u.id+'">';h+='<div class="unit-header"><div style="flex:1">';if(u.type==='player')h+='<div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+u.bg+';color:'+u.fg+'">'+u.initial+'</div><div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div><div class="unit-meta">'+u.cls+' · Plano '+u.plano+'</div></div></div>';else h+='<div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div><div class="unit-meta">Daño '+u.dmg+(u.resist?' · Resist: '+u.resist:'')+' <span class="difficulty-tag diff-'+u.diff+'">'+diffLabel(u.diff)+'</span></div></div>';h+='</div>';if(u.type==='creature')h+='<div class="hp-controls" onclick="event.stopPropagation()"><input type="number" id="hp-'+u.id+'" placeholder="0" min="1"><button class="btn btn-damage" data-action="adjust-hp" data-id="'+u.id+'" data-sign="-1">Daño</button><button class="btn btn-heal" data-action="adjust-hp" data-id="'+u.id+'" data-sign="1">Sana</button></div>';h+='</div>';if(u.type==='creature'){var pct=Math.round((u.hp/u.hpMax)*100);h+='<div class="hp-section"><div class="hp-display" style="color:'+hpColor(pct)+'">'+u.hp+'<span style="font-size:13px;color:var(--ink4)">/'+u.hpMax+'</span></div><div class="hp-bar"><div class="hp-fill" style="width:'+pct+'%;background:'+hpColor(pct)+'"></div></div></div>'}h+='<div class="actions-row" onclick="event.stopPropagation()"><label class="action-check"><input type="checkbox" '+(u.actions.mov?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'mov\')"> Mov</label><label class="action-check"><input type="checkbox" '+(u.actions.act1?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act1\')"> Acción 1</label><label class="action-check"><input type="checkbox" '+(u.actions.act2?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act2\')"> Acción 2</label></div>';if(isExp&&u.abilities&&u.abilities.length){h+='<div class="abilities-compact"><div class="form-label" style="margin-bottom:6px">HABILIDADES</div>';u.abilities.forEach(function(a){h+='<div class="ability-line"><span class="ability-name">'+a.name+'</span> ['+a.type+']'+(a.cost?' <span style="color:var(--gold)">'+a.cost+'</span>':'')+'<div style="font-size:12px;color:var(--ink3)">'+a.desc+'</div></div>'});h+='</div>'}h+='</div>'});if(combat.lairActions.length){h+='<div class="lair-panel"><div class="form-label" style="color:var(--orange)">LAIR ACTIONS — Ronda '+combat.round+'</div>';combat.lairActions.forEach(function(la){h+='<div class="lair-action-btn'+(la.used?' used':'')+'" data-action="use-lair" data-id="'+la.id+'"><input type="checkbox" style="width:20px;height:20px;pointer-events:none" '+(la.used?'checked':'')+'> '+la.text+'</div>'});h+='</div>'}h+='<div class="echo-panel"><div class="form-label" style="color:var(--gold)">ECHO POINTS</div>';dbGetAll('players').forEach(function(p){h+='<div class="echo-row"><div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+(p.bg||'#444')+';color:'+(p.fg||'#fff')+'">'+(p.initial||p.name.charAt(0))+'</div><div class="echo-player-name">'+p.name+'</div></div><div style="display:flex;align-items:center;gap:8px"><div class="echo-count">'+(p.echo||0)+'</div><button class="echo-btn" data-action="add-echo-tracker" data-id="'+p.id+'">+1</button></div></div>'});h+='</div>';el.innerHTML=h}
 
-/* ══════════════════════════════════════════════
-   RENDER: SETTINGS
-   ══════════════════════════════════════════════ */
-function renderSettings(){
-  var el=document.getElementById('settings-content');if(!el)return;
-  var h='<div class="section-label">CONFIGURACIÓN</div>';
-  // Gamedata info
-  h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">GAME DATA</div><div style="font-size:14px;color:var(--ink2);line-height:1.8">';
-  if(typeof GAMEDATA!=='undefined'){h+='Clases: '+GAMEDATA.classes.length+' ('+GAMEDATA.classes.reduce(function(a,c){return a+c.subclasses.length},0)+' subclases)<br>Facciones: '+GAMEDATA.factions.length+'<br>Kits: '+GAMEDATA.kits.length+'<br>Condiciones: '+GAMEDATA.conditions.length}
-  else{h+='⚠ gamedata.js no encontrado'}
-  h+='<br><br>';
-  DB_TABLES.forEach(function(t){var d=dbLoad(t);var c=Array.isArray(d)?d.length:(d?1:0);h+=t+': '+c+'<br>'});
-  h+='</div></div>';
-  // Export
-  h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">EXPORTAR</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">';
-  DB_TABLES.forEach(function(t){h+='<button class="btn" onclick="exportDB(\''+t+'\')">'+t+'</button>'});
-  h+='<button class="btn btn-primary" onclick="exportAll()">Todo</button></div></div>';
-  // Import
-  h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">IMPORTAR</div><input type="file" accept=".json" style="font-size:14px;margin-top:8px" onchange="importFile(this)"><div id="import-status" style="margin-top:8px;font-size:13px"></div></div>';
-  // Reset
-  h+='<div style="background:var(--surface);border:2px solid var(--red);border-radius:var(--r-lg);padding:18px"><div class="form-label" style="color:var(--red)">ZONA DE PELIGRO</div><button class="btn" style="border-color:var(--red);color:var(--red);margin-top:8px" onclick="if(confirm(\'¿Borrar TODO?\')){DB_TABLES.forEach(function(t){localStorage.removeItem(dbKey(t))});localStorage.removeItem(dbKey(\'_initialized\'));location.reload()}">Resetear datos</button></div>';
-  el.innerHTML=h;
-}
-
+/* SETTINGS */
+function renderSettings(){var el=document.getElementById('settings-content');if(!el)return;var h='<div class="section-label">CONFIGURACIÓN</div><div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">GAME DATA</div><div style="font-size:14px;color:var(--ink2);line-height:1.8">';if(G)h+='Clases: '+G.classes.length+' ('+G.classes.reduce(function(a,c){return a+c.subclasses.length},0)+' subclases)<br>Facciones: '+G.factions.length+'<br>Kits: '+G.kits.length;else h+='⚠ gamedata.js no cargado — colócalo junto a index.html';h+='<br><br>';DB_TABLES.forEach(function(t){var d=dbLoad(t);h+=t+': '+(Array.isArray(d)?d.length:(d?1:0))+'<br>'});h+='</div></div>';h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">EXPORTAR</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">';DB_TABLES.forEach(function(t){h+='<button class="btn" data-action="export-db" data-type="'+t+'">'+t+'</button>'});h+='<button class="btn btn-primary" data-action="export-all">Todo</button></div></div>';h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">IMPORTAR</div><input type="file" accept=".json" style="font-size:14px;margin-top:8px" onchange="importFile(this)"><div id="import-status" style="margin-top:8px;font-size:13px"></div></div>';h+='<div style="background:var(--surface);border:2px solid var(--red);border-radius:var(--r-lg);padding:18px"><div class="form-label" style="color:var(--red)">ZONA DE PELIGRO</div><button class="btn" style="border-color:var(--red);color:var(--red);margin-top:8px" data-action="reset-all">Resetear datos</button></div>';el.innerHTML=h}
 function exportDB(t){var d=dbLoad(t);if(!d){alert('Sin datos');return}var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='eq_'+t+'.json';a.click()}
-function exportAll(){var all={};DB_TABLES.forEach(function(t){all[t]=dbLoad(t)});var b=new Blob([JSON.stringify(all,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='eq_backup_'+new Date().toISOString().split('T')[0]+'.json';a.click()}
-function importFile(input){var f=input.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);if(d.campaign||d.npcs||d.scenes){DB_TABLES.forEach(function(t){if(d[t])dbSave(t,d[t])});document.getElementById('import-status').innerHTML='✅ Importado'}else if(Array.isArray(d)){var n=f.name.replace('eq_','').replace('.json','');if(DB_TABLES.includes(n)){dbSave(n,d);document.getElementById('import-status').innerHTML='✅ '+n+' importado'}}}catch(err){document.getElementById('import-status').innerHTML='❌ Error: '+err.message}input.value=''};r.readAsText(f)}
+function exportAll(){var all={};DB_TABLES.forEach(function(t){all[t]=dbLoad(t)});var b=new Blob([JSON.stringify(all,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='eq_backup.json';a.click()}
+function importFile(input){var f=input.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);var imported=[];if(d.campaign||d.npcs){DB_TABLES.forEach(function(t){if(d[t]){dbSave(t,d[t]);imported.push(t)}});document.getElementById('import-status').innerHTML='✅ '+imported.join(', ')}else if(Array.isArray(d)){var n=f.name.replace('eq_','').replace('.json','');if(DB_TABLES.includes(n)){dbSave(n,d);document.getElementById('import-status').innerHTML='✅ '+n}}}catch(err){document.getElementById('import-status').innerHTML='❌ '+err.message}input.value=''};r.readAsText(f)}
 
-/* ══════════════════════════════════════════════
-   MODALS — Create/Edit forms
-   ══════════════════════════════════════════════ */
-function openModal(type,id){
-  var item=null;
-  var table=type;
-  if(id)item=dbGetById(table,id);
-  var title=(id?'Editar':'Crear')+' '+{npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item',players:'Jugador',scene:'Escena',campaign:'Campaña'}[type];
-  var fields=getFormFields(type,item);
-  var h='<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-title">'+title+'</div>';
-  h+=fields;
-  h+='<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveModal(\''+type+'\','+(id?'\''+id+'\'':'null')+')">Guardar</button></div></div></div>';
-  document.getElementById('modal-root').innerHTML=h;
-}
-
+/* MODALS */
+function openModal(type,id){var item=id?dbGetById(type==='scene'?'scenes':type,id):null;var title=(id?'Editar':'Crear')+' '+{npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item',players:'Jugador',scene:'Escena',campaign:'Campaña'}[type];var h='<div class="modal-overlay"><div class="modal"><div class="modal-title">'+title+'</div>'+getFields(type,item||{})+'<div class="modal-actions"><button class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" data-action="save-modal" data-type="'+type+'" data-id="'+(id||'null')+'">Guardar</button></div></div></div>';document.getElementById('modal-root').innerHTML=h}
 function closeModal(){document.getElementById('modal-root').innerHTML=''}
+function fld(label,name,val,ph,ta){var h='<div class="form-section"><div class="form-label">'+label+'</div>';if(ta)h+='<textarea class="form-input" id="f-'+name+'" placeholder="'+(ph||'')+'">'+(val||'')+'</textarea>';else h+='<input class="form-input" id="f-'+name+'" type="text" value="'+String(val||'').replace(/"/g,'&quot;')+'" placeholder="'+(ph||'')+'">';return h+'</div>'}
+function sel(label,name,opts,val){var h='<div class="form-section"><div class="form-label">'+label+'</div><select class="form-input" id="f-'+name+'">';opts.forEach(function(o){h+='<option value="'+o.v+'"'+(val===o.v?' selected':'')+'>'+o.l+'</option>'});return h+'</select></div>'}
+function getFields(type,v){var h='';if(type==='campaign')h+=fld('Nombre','name',v.name,'Nombre de la campaña');if(type==='scene'){h+=fld('Nombre','name',v.name,'');h+=sel('Tipo','type',[{v:'combat',l:'Combate'},{v:'narrative',l:'Narrativa'}],v.type||'narrative');h+=fld('Hook','hook',v.setup?v.setup.hook:'','¿Cómo abre?',1);h+=fld('Conflicto','conflict',v.setup?v.setup.conflict:'','¿Qué hay que resolver?',1);h+=fld('Si fallan','stakesFail',v.setup?v.setup.stakesFail:'','');h+=fld('Si triunfan','stakesWin',v.setup?v.setup.stakesWin:'','');h+=fld('Beat de salida','exit',v.setup?v.setup.exit:'','',1);h+=fld('Lair Actions (una por línea)','lairActions',(v.lairActions||[]).join('\n'),'',1);h+=fld('Notas','notes',v.notes,'',1)}if(type==='npcs'){h+=fld('Nombre','name',v.name,'');h+=fld('Rol','role',v.role,'Ej: Comerciante');h+=fld('Raza','race',v.race,'');h+=fld('Motivación','motivation',v.motivation,'',1);h+=fld('Lo que sabe','knows',v.knows,'',1);h+=fld('Lo que quiere','wants',v.wants,'',1);h+=fld('Voz','voice',v.voice,'Frase ejemplo')}if(type==='villains'){h+=fld('Nombre','name',v.name,'');h+=fld('Rol','role',v.role,'');h+=sel('Estado','status',[{v:'prepared',l:'Preparado'},{v:'active',l:'Activo'}],v.status||'prepared');h+=fld('Motivación','motivation',v.motivation,'',1);h+=fld('Arco','arc',v.arc,'',1);h+=fld('HP','hp',v.stats?v.stats.hp:'','');h+=fld('Daño','dmg',v.stats?v.stats.dmg:'','Ej: 8-14');h+=fld('Especial','special',v.stats?v.stats.special:'','');h+=fld('Resistencia','resist',v.stats?v.stats.resist:'','')}if(type==='bestiary'){h+=fld('Nombre','name',v.name,'');if(G){h+=sel('Tipo','btype',G.creatureTypes.map(function(t){return{v:t,l:t}}),v.type||'Bestia');h+=sel('Dificultad','difficulty',G.difficulties.map(function(d){return{v:d.id,l:d.name}}),v.difficulty||'medium')}else{h+=fld('Tipo','btype',v.type,'');h+=fld('Dificultad','difficulty',v.difficulty,'')}h+=fld('HP','hp',v.hp,'');h+=fld('Daño','dmg',v.dmg,'Ej: 4-8');h+=fld('Resistencia','resist',v.resist,'');h+=fld('Terreno','terrain',(v.terrain||[]).join(', '),'Bosque, Cueva');h+=fld('Descripción','description',v.description,'',1)}if(type==='loot'){h+=fld('Nombre','name',v.name,'');h+=sel('Tipo','ltype',[{v:'Arma',l:'Arma'},{v:'Narrativo',l:'Narrativo'},{v:'Información',l:'Información'},{v:'Consumible',l:'Consumible'}],v.type||'Consumible');if(G)h+=sel('Rareza','rarity',G.rarities.map(function(r){return{v:r.id,l:r.name}}),v.rarity||'common');h+=fld('Descripción','description',v.description,'',1);h+=fld('Efecto','effect',v.effect,'',1)}if(type==='players'){h+=fld('Nombre','name',v.name,'');h+=fld('Inicial','initial',v.initial||'','Letra');h+=fld('Color fondo','bg',v.bg||'#2d3a5e','#hex');h+=fld('Color texto','fg',v.fg||'#8aa4d4','#hex');if(G){h+=sel('Facción','factionId',G.factions.map(function(f){return{v:f.id,l:f.name}}),v.factionId||'');h+=sel('Clase','classId',G.classes.map(function(c){return{v:c.id,l:c.nameEs+' ('+c.type+')'}}),v.classId||'');var subs=[];G.classes.forEach(function(c){c.subclasses.forEach(function(s){subs.push({v:s.id,l:c.nameEs+' → '+s.name})})});h+=sel('Subclase','subclassId',subs,v.subclassId||'');h+=sel('Kit','kitId',G.kits.map(function(k){return{v:k.id,l:k.name+' ('+k.fantasy+')'}}),v.kitId||'')}h+=fld('Plano','plano',v.plano||1,'1-4');h+=fld('Backstory','backstory',v.backstory||'','',1)}return h}
+function saveModal(type,id){function gv(n){var el=document.getElementById('f-'+n);return el?el.value.trim():''}var item;if(type==='campaign'){item={id:id||'camp-'+uid(),name:gv('name'),arcs:[{id:'arc-1',name:'Arco I',beats:[]}]};dbSave('campaign',item);closeModal();nav('campaign');return}if(type==='scene'){item={name:gv('name'),type:gv('type'),status:'ready',sporadic:false,setup:{hook:gv('hook'),conflict:gv('conflict'),stakesFail:gv('stakesFail'),stakesWin:gv('stakesWin'),exit:gv('exit')},participants:{npcIds:[],creatureIds:[]},lairActions:gv('lairActions').split('\n').filter(function(l){return l.trim()}),objectives:{},notes:gv('notes'),debrief:null};if(id){dbUpdate('scenes',id,item)}else{item.id='sce-'+uid();dbCreate('scenes',item);selectedSceneId=item.id}closeModal();nav('scenes');return}if(type==='npcs')item={name:gv('name'),role:gv('role'),race:gv('race'),motivation:gv('motivation'),knows:gv('knows'),wants:gv('wants'),voice:gv('voice'),appearsIn:[],tags:[]};if(type==='villains')item={name:gv('name'),role:gv('role'),status:gv('status'),motivation:gv('motivation'),arc:gv('arc'),stats:{hp:parseInt(gv('hp'))||0,dmg:gv('dmg'),special:gv('special'),resist:gv('resist')},abilities:[],moves:[]};if(type==='bestiary')item={name:gv('name'),type:gv('btype'),difficulty:gv('difficulty'),hp:parseInt(gv('hp'))||10,dmg:gv('dmg'),resist:gv('resist'),terrain:gv('terrain').split(',').map(function(t){return t.trim()}).filter(Boolean),description:gv('description'),abilities:[],lairSuggestions:[]};if(type==='loot')item={name:gv('name'),type:gv('ltype'),rarity:gv('rarity'),description:gv('description'),effect:gv('effect'),delivered:false};if(type==='players'){item={name:gv('name'),initial:gv('initial')||gv('name').charAt(0),bg:gv('bg'),fg:gv('fg'),factionId:gv('factionId'),classId:gv('classId'),subclassId:gv('subclassId'),kitId:gv('kitId'),plano:parseInt(gv('plano'))||1,backstory:gv('backstory'),echo:0};if(id){var old=dbGetById('players',id);if(old)item.echo=old.echo}}if(id)dbUpdate(type==='scene'?'scenes':type,id,item);else dbCreate(type==='scene'?'scenes':type,item);closeModal();renderView(currentView)}
 
-function getFormFields(type,item){
-  var v=item||{};var h='';
-  function field(label,name,val,placeholder,textarea){
-    h+='<div class="form-section"><div class="form-label">'+label+'</div>';
-    if(textarea)h+='<textarea class="form-input" id="f-'+name+'" placeholder="'+(placeholder||'')+'">'+(val||'')+'</textarea>';
-    else h+='<input class="form-input" id="f-'+name+'" type="text" value="'+(val||'').replace(/"/g,'&quot;')+'" placeholder="'+(placeholder||'')+'">';
-    h+='</div>';
-  }
-  function select(label,name,options,val){
-    h+='<div class="form-section"><div class="form-label">'+label+'</div><select class="form-input" id="f-'+name+'">';
-    options.forEach(function(o){h+='<option value="'+o.value+'" '+(val===o.value?'selected':'')+'>'+o.label+'</option>'});
-    h+='</select></div>';
-  }
-
-  if(type==='campaign'){
-    field('Nombre','name',v.name,'Nombre de la campaña');
-  }
-  if(type==='scene'){
-    field('Nombre','name',v.name,'Nombre de la escena');
-    select('Tipo','type',[{value:'combat',label:'Combate'},{value:'narrative',label:'Narrativa'}],v.type||'narrative');
-    field('Hook','hook',v.setup?v.setup.hook:'','¿Cómo abre la escena?',true);
-    field('Conflicto','conflict',v.setup?v.setup.conflict:'','¿Qué hay que resolver?',true);
-    field('Si fallan','stakesFail',v.setup?v.setup.stakesFail:'','¿Qué pierden?');
-    field('Si triunfan','stakesWin',v.setup?v.setup.stakesWin:'','¿Qué ganan?');
-    field('Beat de salida','exit',v.setup?v.setup.exit:'','¿Cómo conecta con lo siguiente?',true);
-    field('Lair Actions (una por línea)','lairActions',(v.lairActions||[]).join('\n'),'',true);
-    field('Notas DM','notes',v.notes,'Recordatorios, música...',true);
-  }
-  if(type==='npcs'){
-    field('Nombre','name',v.name,'Nombre del NPC');
-    field('Rol','role',v.role,'Ej: Comerciante, Autoridad, Espía');
-    field('Raza','race',v.race,'Ej: Humano, Elfo, Goblin');
-    field('Motivación','motivation',v.motivation,'¿Qué lo mueve?',true);
-    field('Lo que sabe','knows',v.knows,'Información que puede revelar',true);
-    field('Lo que quiere','wants',v.wants,'¿Qué busca?',true);
-    field('Voz','voice',v.voice,'Una frase ejemplo de cómo habla');
-  }
-  if(type==='villains'){
-    field('Nombre','name',v.name,'Nombre del villano');
-    field('Rol','role',v.role,'Ej: Líder, Agente, Mercenario');
-    select('Estado','status',[{value:'prepared',label:'Preparado'},{value:'active',label:'Activo'}],v.status||'prepared');
-    field('Motivación','motivation',v.motivation,'',true);
-    field('Arco narrativo','arc',v.arc,'Fases del plan del villano',true);
-    field('HP','hp',v.stats?v.stats.hp:'','');
-    field('Daño','dmg',v.stats?v.stats.dmg:'','Ej: 8-14');
-    field('Especial','special',v.stats?v.stats.special:'','Habilidad especial');
-    field('Resistencia','resist',v.stats?v.stats.resist:'','');
-  }
-  if(type==='bestiary'){
-    field('Nombre','name',v.name,'');
-    var G=typeof GAMEDATA!=='undefined'?GAMEDATA:null;
-    if(G)select('Tipo','btype',G.creatureTypes.map(function(t){return{value:t,label:t}}),v.type||'Bestia');
-    else field('Tipo','btype',v.type,'Bestia, No-muerto, etc.');
-    if(G)select('Dificultad','difficulty',G.difficulties.map(function(d){return{value:d.id,label:d.name}}),v.difficulty||'medium');
-    else field('Dificultad','difficulty',v.difficulty,'easy/medium/hard/boss');
-    field('HP','hp',v.hp,'');
-    field('Daño','dmg',v.dmg,'Ej: 4-8');
-    field('Resistencia','resist',v.resist,'');
-    field('Terreno (separado por comas)','terrain',(v.terrain||[]).join(', '),'Bosque, Cueva, Ruinas');
-    field('Descripción narrativa','description',v.description,'Cómo se ve, suena, huele',true);
-    field('Lair Actions sugeridas (una por línea)','lairSugg',(v.lairSuggestions||[]).join('\n'),'',true);
-  }
-  if(type==='loot'){
-    field('Nombre','name',v.name,'');
-    select('Tipo','ltype',[{value:'Arma',label:'Arma'},{value:'Narrativo',label:'Narrativo'},{value:'Información',label:'Información'},{value:'Consumible',label:'Consumible'}],v.type||'Consumible');
-    var G=typeof GAMEDATA!=='undefined'?GAMEDATA:null;
-    if(G)select('Rareza','rarity',G.rarities.map(function(r){return{value:r.id,label:r.name}}),v.rarity||'common');
-    field('Descripción','description',v.description,'',true);
-    field('Efecto mecánico','effect',v.effect,'',true);
-  }
-  if(type==='players'){
-    field('Nombre','name',v.name,'');
-    field('Inicial','initial',v.initial||'','Una letra');
-    field('Color fondo','bg',v.bg||'#444','Hex color');
-    field('Color texto','fg',v.fg||'#fff','Hex color');
-    var G=typeof GAMEDATA!=='undefined'?GAMEDATA:null;
-    if(G){
-      select('Facción','factionId',G.factions.map(function(f){return{value:f.id,label:f.name}}),v.factionId||'');
-      select('Clase','classId',G.classes.map(function(c){return{value:c.id,label:c.nameEs+' ('+c.type+')'}}),v.classId||'');
-      // Subclass - will show all, ideally filtered by class
-      var allSubs=[];G.classes.forEach(function(c){c.subclasses.forEach(function(s){allSubs.push({value:s.id,label:c.nameEs+' → '+s.name})})});
-      select('Subclase','subclassId',allSubs,v.subclassId||'');
-      select('Kit','kitId',G.kits.map(function(k){return{value:k.id,label:k.name+' ('+k.fantasy+')'}}),v.kitId||'');
-    }
-    field('Plano','plano',v.plano||1,'1-4');
-    field('Backstory','backstory',v.backstory||'','Historia del personaje',true);
-  }
-  return h;
-}
-
-function saveModal(type,id){
-  function gv(name){var el=document.getElementById('f-'+name);return el?el.value.trim():''}
-  var item={};
-  if(type==='campaign'){
-    item={id:id||'camp-'+uid(),name:gv('name'),arcs:[{id:'arc-1',name:'Arco I',beats:[]}]};
-    dbSaveSingle('campaign',item);closeModal();nav('campaign');return;
-  }
-  if(type==='scene'){
-    item={name:gv('name'),type:gv('type'),status:'ready',sporadic:false,
-      setup:{hook:gv('hook'),conflict:gv('conflict'),stakesFail:gv('stakesFail'),stakesWin:gv('stakesWin'),exit:gv('exit')},
-      participants:{npcIds:[],creatureIds:[]},
-      lairActions:gv('lairActions').split('\n').filter(function(l){return l.trim()}),
-      objectives:{session:'',scene:[],personal:{}},notes:gv('notes'),debrief:null};
-    if(id){dbUpdate('scenes',id,item)}else{item.id='scene-'+uid();dbCreate('scenes',item);selectedSceneId=item.id}
-    closeModal();nav('scenes');return;
-  }
-  if(type==='npcs'){
-    item={name:gv('name'),role:gv('role'),race:gv('race'),motivation:gv('motivation'),knows:gv('knows'),wants:gv('wants'),voice:gv('voice'),appearsIn:[],tags:[]};
-    if(id)dbUpdate('npcs',id,item);else dbCreate('npcs',item);
-  }
-  if(type==='villains'){
-    item={name:gv('name'),role:gv('role'),status:gv('status'),motivation:gv('motivation'),arc:gv('arc'),
-      stats:{hp:parseInt(gv('hp'))||0,dmg:gv('dmg'),special:gv('special'),resist:gv('resist')},abilities:[],moves:[],appearsIn:[]};
-    if(id)dbUpdate('villains',id,item);else dbCreate('villains',item);
-  }
-  if(type==='bestiary'){
-    item={name:gv('name'),type:gv('btype'),difficulty:gv('difficulty'),hp:parseInt(gv('hp'))||10,dmg:gv('dmg'),resist:gv('resist'),
-      terrain:gv('terrain').split(',').map(function(t){return t.trim()}).filter(Boolean),
-      description:gv('description'),abilities:[],
-      lairSuggestions:gv('lairSugg').split('\n').filter(function(l){return l.trim()}),appearsIn:[]};
-    if(id)dbUpdate('bestiary',id,item);else dbCreate('bestiary',item);
-  }
-  if(type==='loot'){
-    item={name:gv('name'),type:gv('ltype'),rarity:gv('rarity'),description:gv('description'),effect:gv('effect'),delivered:false,intendedFor:null,plannedScene:null};
-    if(id)dbUpdate('loot',id,item);else dbCreate('loot',item);
-  }
-  if(type==='players'){
-    item={name:gv('name'),initial:gv('initial')||gv('name').charAt(0),bg:gv('bg'),fg:gv('fg'),
-      factionId:gv('factionId'),classId:gv('classId'),subclassId:gv('subclassId'),kitId:gv('kitId'),
-      plano:parseInt(gv('plano'))||1,backstory:gv('backstory'),echo:0};
-    if(id){var old=dbGetById('players',id);if(old)item.echo=old.echo;dbUpdate('players',id,item)}
-    else dbCreate('players',item);
-  }
-  closeModal();renderView(currentView);
-}
-
-/* ══════════════════════════════════════════════
-   INIT
-   ══════════════════════════════════════════════ */
+/* INIT */
 nav('campaign');
+
 </script>
 </body>
 </html>
