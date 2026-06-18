@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Story Master Hub — Epic Quest</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+<style>
+/* ══════════════════════════════════════════════
+   RESET & TOKENS — iPad-first, legibility-first
+   ══════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f3f2ee;--surface:#fff;--surface2:#f9f8f5;
+  --ink:#1a1a1a;--ink2:#444;--ink3:#666;--ink4:#999;
+  --border:#ddd9d0;--border2:#ccc8be;
+  --gold:#8a6f0a;--gold-light:#f0ead0;--gold-pale:#f8f5e8;
+  --red:#b02828;--red-light:#fae8e8;
+  --blue:#2858a0;--blue-light:#e6eefc;
+  --green:#247038;--green-light:#e4f2ea;
+  --purple:#6030a0;--purple-light:#ede6fa;
+  --orange:#a06010;--orange-light:#faf0e2;
+  --sidebar:#1c1d2e;--sidebar2:#282940;--sidebar3:#333455;
+  --sidebar-text:#b0b1c8;--sidebar-dim:#7a7b9a;
+  --r:8px;--r-lg:12px;
+  --font:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --serif:Georgia,serif;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);font-size:15px;color:var(--ink);background:var(--bg);display:flex}
+
+/* ══════════════════════════════════════════════
+   SIDEBAR — touch-friendly, no clutter
+   ══════════════════════════════════════════════ */
+.sidebar{
+  width:180px;min-width:180px;background:var(--sidebar);
+  display:flex;flex-direction:column;padding:16px 8px;
+  overflow-y:auto;user-select:none;-webkit-overflow-scrolling:touch;
+}
+.sidebar::-webkit-scrollbar{display:none}
+.sb-brand{text-align:center;margin-bottom:4px}
+.sb-brand-name{color:#c9a84c;font-size:14px;font-weight:800;letter-spacing:2px}
+.sb-brand-sub{color:var(--sidebar-dim);font-size:10px;letter-spacing:.5px}
+.sb-campaign{
+  background:var(--sidebar2);border:1px solid var(--sidebar3);
+  border-radius:var(--r);padding:10px;margin:10px 0 16px;
+}
+.sb-campaign-label{color:var(--sidebar-dim);font-size:9px;letter-spacing:.8px;font-weight:700}
+.sb-campaign-name{color:#e8e8f0;font-size:13px;font-weight:700;margin-top:3px}
+.sb-campaign-session{color:var(--sidebar-text);font-size:11px;margin-top:2px}
+.sb-nav{display:flex;flex-direction:column;gap:2px}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 10px;border-radius:var(--r);min-height:44px;
+  cursor:pointer;border:1px solid transparent;
+}
+.sb-item:active{background:var(--sidebar2)}
+.sb-item.active{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.3)}
+.sb-item-icon{font-size:18px;width:22px;text-align:center;flex-shrink:0}
+.sb-item-name{font-size:13px;font-weight:600;color:var(--sidebar-text)}
+.sb-item.active .sb-item-name{color:#c9a84c}
+.sb-divider{border:none;border-top:1px solid var(--sidebar3);margin:12px 4px}
+.sb-players{margin-top:auto;padding-top:12px}
+.sb-players-label{color:var(--sidebar-dim);font-size:9px;letter-spacing:1px;font-weight:700;text-align:center;margin-bottom:8px}
+.sb-player-list{display:flex;justify-content:center;gap:8px}
+.sb-player{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;
+}
+.sb-settings{
+  margin-top:12px;padding:10px;border-radius:var(--r);min-height:44px;
+  text-align:center;cursor:pointer;border:1px solid var(--sidebar3);
+  color:var(--sidebar-dim);font-size:11px;display:flex;align-items:center;justify-content:center;
+}
+.sb-settings:active{background:var(--sidebar2);color:var(--sidebar-text)}
+
+/* ══════════════════════════════════════════════
+   MAIN AREA
+   ══════════════════════════════════════════════ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 20px;background:var(--surface);
+  border-bottom:1px solid var(--border);flex-shrink:0;min-height:50px;
+}
+.breadcrumb{font-size:13px;color:var(--ink3)}
+.breadcrumb span{color:var(--ink);font-weight:600}
+.topbar-spacer{flex:1}
+.btn{
+  padding:10px 16px;border-radius:var(--r);font-size:13px;
+  font-weight:600;font-family:var(--font);cursor:pointer;
+  border:1px solid var(--border);background:var(--surface);
+  color:var(--ink2);display:inline-flex;align-items:center;gap:6px;
+  min-height:44px;
+}
+.btn:active{background:var(--bg);border-color:var(--border2)}
+.btn-gold{background:var(--gold-light);border-color:var(--gold);color:var(--gold)}
+.btn-primary{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn-primary:active{background:#6a5808}
+.content{flex:1;overflow-y:auto;padding:20px;-webkit-overflow-scrolling:touch}
+.content::-webkit-scrollbar{display:none}
+
+/* ══════════════════════════════════════════════
+   VIEW SYSTEM
+   ══════════════════════════════════════════════ */
+.view{display:none}
+.view.active{display:block}
+
+/* ══════════════════════════════════════════════
+   SECTION HEADERS
+   ══════════════════════════════════════════════ */
+.section-label{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--gold);margin-bottom:10px}
+.section-desc{font-size:14px;color:var(--ink3);margin-bottom:16px;line-height:1.5}
+
+/* ══════════════════════════════════════════════
+   CAMPAIGN: BEATS
+   ══════════════════════════════════════════════ */
+.beats-row{display:flex;gap:8px;margin-bottom:24px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.beat-card{
+  flex:0 0 190px;background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--r-lg);padding:14px 16px;cursor:pointer;
+}
+.beat-card:active{border-color:var(--gold)}
+.beat-card.active{border-color:var(--gold);background:var(--gold-pale)}
+.beat-card.dim{opacity:.4}
+.beat-card .beat-num{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px}
+.beat-card .beat-name{font-size:15px;font-weight:700;color:var(--ink);margin-top:4px;font-family:var(--serif)}
+.beat-card .beat-status{font-size:11px;color:var(--ink3);margin-top:6px}
+.beat-card .beat-bar{height:4px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
+.beat-card .beat-fill{height:100%;background:var(--gold);border-radius:2px}
+.beat-connector{flex-shrink:0;display:flex;align-items:center;color:var(--border2);font-size:16px}
+
+/* ══════════════════════════════════════════════
+   CAMPAIGN: SCENE CARDS
+   ══════════════════════════════════════════════ */
+.scenes-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.scenes-header .section-label{margin:0}
+.scene-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:24px}
+.scene-card{
+  background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--r-lg);padding:16px;cursor:pointer;
+  position:relative;overflow:hidden;
+}
+.scene-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.scene-card.combat::before{background:var(--red)}
+.scene-card.social::before{background:var(--blue)}
+.scene-card.exploration::before{background:var(--green)}
+.scene-card.revelation::before{background:var(--purple)}
+.scene-card.sporadic::before{background:var(--gold)}
+.scene-card.sporadic{border-style:dashed}
+.scene-badge{display:inline-block;padding:3px 10px;border-radius:var(--r);font-size:11px;font-weight:700;margin-bottom:8px}
+.badge-combat{background:var(--red-light);color:var(--red)}
+.badge-social{background:var(--blue-light);color:var(--blue)}
+.badge-exploration{background:var(--green-light);color:var(--green)}
+.badge-revelation{background:var(--purple-light);color:var(--purple)}
+.badge-sporadic{background:var(--gold-pale);color:var(--gold)}
+.scene-status{float:right;font-size:10px;font-weight:600;padding:3px 8px;border-radius:var(--r)}
+.status-debrief{background:var(--green-light);color:var(--green)}
+.status-active{background:var(--gold-pale);color:var(--gold)}
+.status-ready{background:var(--bg);color:var(--ink3)}
+.scene-card .scene-name{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px;font-family:var(--serif)}
+.scene-card .scene-detail{font-size:13px;color:var(--ink3);line-height:1.5;margin-bottom:2px}
+.scene-flag{margin-top:10px;padding:8px 10px;border-radius:var(--r);font-size:12px;line-height:1.4;border:1px dashed}
+.flag-consequence{background:rgba(176,40,40,.04);border-color:var(--red);color:var(--red)}
+.flag-personal{background:rgba(96,48,160,.04);border-color:var(--purple);color:var(--purple)}
+
+/* ══════════════════════════════════════════════
+   SCENE BUILDER
+   ══════════════════════════════════════════════ */
+.builder-layout{display:flex;gap:16px}
+.builder-main{flex:1;min-width:0}
+.builder-side{width:280px;min-width:280px}
+@media(max-width:900px){
+  .builder-layout{flex-direction:column}
+  .builder-side{width:100%;min-width:0}
+}
+.builder-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.builder-tab{
+  padding:10px 16px;border-radius:var(--r);font-size:13px;
+  font-weight:600;cursor:pointer;border:2px solid var(--border);
+  background:var(--surface);color:var(--ink3);min-height:44px;
+  display:flex;align-items:center;
+}
+.builder-tab:active{background:var(--bg)}
+.builder-tab.active{background:var(--gold-light);border-color:var(--gold);color:var(--gold)}
+.builder-tab.tab-debrief{color:var(--red)}
+.builder-tab.tab-debrief.active{background:var(--red-light);border-color:var(--red);color:var(--red)}
+.builder-panel{display:none}
+.builder-panel.active{display:block}
+.form-section{margin-bottom:20px}
+.form-label{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--ink3);margin-bottom:8px}
+.form-input{
+  width:100%;padding:12px 14px;border:2px solid var(--border);
+  border-radius:var(--r);font-size:15px;font-family:var(--font);
+  color:var(--ink);background:var(--surface2);resize:vertical;
+}
+.form-input:focus{outline:none;border-color:var(--gold)}
+.form-input::placeholder{color:var(--ink4)}
+textarea.form-input{min-height:70px;line-height:1.5}
+.stakes-row{display:flex;gap:10px}
+@media(max-width:700px){.stakes-row{flex-direction:column}}
+.stake-box{flex:1;padding:14px;border-radius:var(--r-lg);border:2px dashed}
+.stake-fail{background:rgba(176,40,40,.03);border-color:var(--red)}
+.stake-win{background:rgba(36,112,56,.03);border-color:var(--green)}
+.stake-label{font-size:11px;font-weight:700;letter-spacing:.5px;margin-bottom:8px}
+.stake-fail .stake-label{color:var(--red)}
+.stake-win .stake-label{color:var(--green)}
+.stake-box .form-input{background:transparent;border-color:transparent}
+.stake-box .form-input:focus{border-color:inherit}
+
+/* TYPE SELECTOR — color dots, no emoji */
+.type-selector{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.type-option{
+  padding:10px 18px;border-radius:var(--r);border:2px solid var(--border);
+  cursor:pointer;font-size:14px;font-weight:600;background:var(--surface);
+  min-height:44px;display:flex;align-items:center;gap:8px;color:var(--ink2);
+}
+.type-option .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.type-option.selected{border-width:2px}
+.type-option[data-type="combat"] .dot{background:var(--red)}
+.type-option[data-type="social"] .dot{background:var(--blue)}
+.type-option[data-type="exploration"] .dot{background:var(--green)}
+.type-option[data-type="revelation"] .dot{background:var(--purple)}
+.type-option[data-type="combat"].selected{border-color:var(--red);background:var(--red-light);color:var(--red)}
+.type-option[data-type="social"].selected{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
+.type-option[data-type="exploration"].selected{border-color:var(--green);background:var(--green-light);color:var(--green)}
+.type-option[data-type="revelation"].selected{border-color:var(--purple);background:var(--purple-light);color:var(--purple)}
+
+/* ══════════════════════════════════════════════
+   LAIR ACTIONS — checkboxes, not chips
+   ══════════════════════════════════════════════ */
+.lair-section{padding:14px;border-radius:var(--r-lg);background:var(--orange-light);border:2px dashed var(--orange)}
+.lair-check{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;color:var(--ink2);cursor:pointer}
+.lair-check input[type="checkbox"]{width:20px;height:20px;accent-color:var(--orange)}
+.combat-only{display:none}
+.combat-only.visible{display:block}
+
+/* ══════════════════════════════════════════════
+   NPC / CREATURE / LOOT CARDS
+   ══════════════════════════════════════════════ */
+.npc-card,.creature-card,.loot-card{
+  background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px;
+}
+.npc-card .npc-name,.creature-card .creature-name,.loot-card .loot-name{font-size:15px;font-weight:700;font-family:var(--serif)}
+.npc-card .npc-role,.creature-card .creature-type,.loot-card .loot-type{font-size:12px;color:var(--ink3);margin-top:2px}
+.npc-card .npc-detail,.creature-card .creature-abilities,.loot-card .loot-desc{font-size:13px;color:var(--ink2);margin-top:8px;line-height:1.5}
+.npc-card .npc-voice{font-size:14px;color:var(--gold);font-style:italic;margin-top:6px}
+.creature-stats-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.creature-stat{padding:4px 10px;border-radius:var(--r);font-size:12px;font-weight:600;background:var(--bg);color:var(--ink2);border:1px solid var(--border)}
+.creature-stat.hp{background:var(--red-light);color:var(--red);border-color:var(--red)}
+.creature-stat.dmg{background:var(--orange-light);color:var(--orange);border-color:var(--orange)}
+.creature-stat.special{background:var(--purple-light);color:var(--purple);border-color:var(--purple)}
+.difficulty-tag{display:inline-block;padding:3px 10px;border-radius:var(--r);font-size:11px;font-weight:700}
+.diff-easy{background:var(--green-light);color:var(--green)}
+.diff-medium{background:var(--orange-light);color:var(--orange)}
+.diff-hard{background:var(--red-light);color:var(--red)}
+.diff-boss{background:var(--purple-light);color:var(--purple)}
+.loot-card .loot-effect{font-size:13px;color:var(--gold);font-style:italic;margin-top:6px;padding:8px 12px;background:var(--gold-pale);border-radius:var(--r)}
+.loot-rarity{display:inline-block;padding:3px 10px;border-radius:var(--r);font-size:11px;font-weight:700;float:right}
+.rarity-common{background:var(--bg);color:var(--ink3)}
+.rarity-uncommon{background:var(--green-light);color:var(--green)}
+.rarity-rare{background:var(--blue-light);color:var(--blue)}
+.rarity-legendary{background:var(--gold-pale);color:var(--gold)}
+.loot-scene-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;margin-top:8px;padding:4px 8px;background:var(--bg);border-radius:var(--r);color:var(--ink3)}
+
+/* VILLAIN */
+.villain-card-lib{background:var(--surface);border:2px solid var(--red);border-left:5px solid var(--red);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px}
+.villain-label{font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--red);margin-bottom:4px}
+.villain-status{display:inline-block;padding:3px 10px;border-radius:var(--r);font-size:11px;font-weight:700}
+.vs-active{background:var(--red-light);color:var(--red)}
+.vs-prepared{background:var(--gold-pale);color:var(--gold)}
+
+/* DIFFICULTY METER */
+.difficulty-meter{padding:12px 14px;border-radius:var(--r-lg);border:2px solid var(--border);background:var(--surface2);margin-top:12px}
+.difficulty-meter .dm-label{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--ink3);margin-bottom:8px}
+.dm-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.dm-fill{height:100%;border-radius:4px}
+.dm-fill.medium{background:var(--orange);width:55%}
+.dm-text{font-size:12px;display:flex;justify-content:space-between}
+
+/* ══════════════════════════════════════════════
+   LIBRARY
+   ══════════════════════════════════════════════ */
+.lib-category-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.lib-cat-tab{
+  padding:10px 18px;border-radius:var(--r);font-size:13px;
+  font-weight:600;cursor:pointer;border:2px solid var(--border);
+  background:var(--surface);color:var(--ink3);min-height:44px;
+  display:flex;align-items:center;gap:6px;
+}
+.lib-cat-tab:active{background:var(--bg)}
+.lib-cat-tab.active{border-color:var(--gold);color:var(--gold);background:var(--gold-pale)}
+.lib-cat-tab .tab-count{font-size:11px;background:var(--bg);padding:2px 8px;border-radius:10px;color:var(--ink4);font-weight:700}
+.lib-cat-tab.active .tab-count{background:rgba(138,111,10,.12);color:var(--gold)}
+.lib-content{display:none}
+.lib-content.active{display:block}
+.library-layout{display:flex;gap:16px;height:calc(100vh - 220px)}
+@media(max-width:900px){
+  .library-layout{flex-direction:column;height:auto}
+  .library-list{width:100% !important;min-width:0 !important;max-height:300px}
+}
+.library-list{
+  width:300px;min-width:300px;background:var(--surface);
+  border:2px solid var(--border);border-radius:var(--r-lg);overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.library-list::-webkit-scrollbar{display:none}
+.library-search{padding:10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
+.library-search input{
+  width:100%;padding:10px 12px;border:2px solid var(--border);
+  border-radius:var(--r);font-size:14px;font-family:var(--font);
+}
+.library-search input:focus{outline:none;border-color:var(--gold)}
+.library-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;min-height:44px}
+.library-item:active{background:var(--bg)}
+.library-item.active{background:var(--gold-pale);border-left:4px solid var(--gold)}
+.library-item .li-name{font-size:14px;font-weight:600}
+.library-item .li-role{font-size:12px;color:var(--ink3);margin-top:2px}
+.library-item .li-status{float:right}
+.library-detail{
+  flex:1;background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--r-lg);padding:24px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.library-detail::-webkit-scrollbar{display:none}
+.detail-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink4);font-size:15px}
+.detail-header{margin-bottom:20px}
+.detail-name{font-size:22px;font-weight:700;font-family:var(--serif);color:var(--ink)}
+.detail-role{font-size:14px;color:var(--ink3);margin-top:3px}
+.detail-section{margin-bottom:16px}
+.detail-section-label{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--ink3);margin-bottom:6px}
+.detail-section-value{font-size:14px;color:var(--ink);line-height:1.6}
+.detail-voice{
+  font-size:15px;color:var(--gold);font-style:italic;
+  padding:14px 18px;background:var(--gold-pale);border-radius:var(--r);
+  border-left:4px solid var(--gold);margin-top:10px;font-family:var(--serif);
+}
+.creature-terrain{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--green);margin-right:12px}
+
+/* ══════════════════════════════════════════════
+   PLAYER CARDS
+   ══════════════════════════════════════════════ */
+.player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.player-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px 20px}
+.player-card-header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.player-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800}
+.player-card-name{font-size:18px;font-weight:700;font-family:var(--serif)}
+.player-card-class{font-size:13px;color:var(--ink3)}
+.player-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.player-tag{padding:4px 10px;border-radius:var(--r);font-size:12px;font-weight:600;background:var(--bg);color:var(--ink2);border:1px solid var(--border)}
+.player-tag.faction{background:var(--gold-pale);color:var(--gold);border-color:var(--gold)}
+.player-objective{padding:10px 12px;border-radius:var(--r);background:var(--purple-light);border:1px dashed var(--purple);font-size:13px;color:var(--purple);line-height:1.5;margin-top:10px}
+.player-objective-label{font-weight:700;font-size:10px;letter-spacing:.5px;margin-bottom:4px}
+.echo-tracker{display:flex;align-items:center;gap:10px;margin-top:12px;padding:8px 12px;background:var(--gold-pale);border-radius:var(--r)}
+.echo-tracker-label{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px}
+.echo-dots{display:flex;gap:6px}
+.echo-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:10px}
+.echo-dot.filled{background:var(--gold);color:#fff}
+
+/* ══════════════════════════════════════════════
+   PLACEHOLDER
+   ══════════════════════════════════════════════ */
+.placeholder-view{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;text-align:center}
+.placeholder-icon{font-size:48px;margin-bottom:16px;opacity:.3}
+.placeholder-title{font-size:18px;font-weight:700;color:var(--ink3);margin-bottom:8px}
+.placeholder-desc{font-size:14px;color:var(--ink4);max-width:400px;line-height:1.6}
+
+/* ══════════════════════════════════════════════
+   COMBAT TRACKER
+   ══════════════════════════════════════════════ */
+.tracker-bar{display:flex;align-items:center;gap:16px;padding:14px 16px;background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);margin-bottom:16px;flex-wrap:wrap}
+.tracker-stat{text-align:center;min-width:60px}
+.tracker-stat-label{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--ink3)}
+.tracker-stat-value{font-size:22px;font-weight:800;color:var(--ink)}
+.tracker-stat-value.gold{color:var(--gold)}
+
+.initiative-bar{display:flex;gap:6px;overflow-x:auto;padding:10px 0;-webkit-overflow-scrolling:touch}
+.initiative-bar::-webkit-scrollbar{display:none}
+.init-chip{
+  flex-shrink:0;padding:8px 14px;border-radius:var(--r);
+  font-size:13px;font-weight:600;border:2px solid var(--border);
+  background:var(--surface);cursor:pointer;min-height:44px;
+  display:flex;align-items:center;gap:6px;white-space:nowrap;
+}
+.init-chip.active{border-color:var(--green);background:var(--green-light);color:var(--green)}
+.init-chip.done{opacity:.4;text-decoration:line-through}
+.init-chip.dead{opacity:.25;text-decoration:line-through}
+.init-chip.player{border-color:var(--blue);color:var(--blue)}
+.init-chip.player.active{border-color:var(--blue);background:var(--blue-light)}
+.init-chip.sinergia-eligible{border-style:dashed;border-color:var(--gold)}
+
+.unit-card-tracker{
+  background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--r-lg);padding:16px;margin-bottom:10px;
+}
+.unit-card-tracker.active-unit{border-color:var(--green);background:#f4faf6}
+.unit-card-tracker.dead-unit{opacity:.35}
+.unit-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.unit-name{font-size:17px;font-weight:700;font-family:var(--serif)}
+.unit-meta{font-size:12px;color:var(--ink3)}
+.hp-section{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.hp-display{font-size:20px;font-weight:800;min-width:80px}
+.hp-bar{flex:1;min-width:120px;height:10px;background:var(--border);border-radius:5px;overflow:hidden}
+.hp-fill{height:100%;border-radius:5px;transition:width .2s}
+.hp-controls{display:flex;gap:6px;align-items:center}
+.hp-controls input{width:70px;padding:8px 10px;border:2px solid var(--border);border-radius:var(--r);font-size:15px;text-align:center;font-family:var(--font)}
+.hp-controls input:focus{outline:none;border-color:var(--gold)}
+.btn-damage{background:var(--red-light);border-color:var(--red);color:var(--red);min-height:44px}
+.btn-heal{background:var(--green-light);border-color:var(--green);color:var(--green);min-height:44px}
+.actions-row{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.action-check{display:flex;align-items:center;gap:8px;font-size:14px;min-height:44px;cursor:pointer}
+.action-check input[type="checkbox"]{width:22px;height:22px}
+.conditions-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.condition-tag{padding:4px 10px;border-radius:var(--r);font-size:11px;font-weight:600;background:var(--red-light);color:var(--red)}
+.abilities-compact{margin-top:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r)}
+.ability-line{font-size:13px;color:var(--ink2);padding:4px 0;border-bottom:1px solid var(--border)}
+.ability-line:last-child{border:none}
+.ability-name{font-weight:700;color:var(--ink)}
+
+.lair-panel{background:var(--orange-light);border:2px dashed var(--orange);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px}
+.lair-panel .form-label{color:var(--orange)}
+.lair-action-btn{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;
+  background:var(--surface);border:2px solid var(--border);border-radius:var(--r);
+  font-size:14px;cursor:pointer;min-height:44px;width:100%;margin-bottom:6px;
+  color:var(--ink2);
+}
+.lair-action-btn:active{background:var(--orange-light);border-color:var(--orange)}
+.lair-action-btn.used{opacity:.35;text-decoration:line-through}
+
+.echo-panel{background:var(--gold-pale);border:2px solid var(--gold);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px}
+.echo-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(138,111,10,.15);min-height:44px}
+.echo-row:last-child{border:none}
+.echo-player-name{font-size:15px;font-weight:600}
+.echo-btn{
+  padding:8px 14px;border-radius:var(--r);font-size:14px;font-weight:700;
+  background:var(--gold);color:#fff;border:none;cursor:pointer;min-height:44px;
+}
+.echo-btn:active{background:#6a5808}
+.echo-count{font-size:18px;font-weight:800;color:var(--gold);min-width:30px;text-align:center}
+
+.no-session{display:flex;flex-direction:column;align-items:center;justify-content:center;height:50vh;text-align:center;gap:16px}
+.no-session-title{font-size:18px;font-weight:700;color:var(--ink3)}
+.no-session-desc{font-size:14px;color:var(--ink4);max-width:400px;line-height:1.6}
+
+/* ══════════════════════════════════════════════
+   UTILITIES
+   ══════════════════════════════════════════════ */
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+.mb-16{margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-name">EPIC</div>
+    <div class="sb-brand-sub">STORY MASTER</div>
+  </div>
+  <div class="sb-campaign">
+    <div class="sb-campaign-label">CAMPAÑA ACTIVA</div>
+    <div class="sb-campaign-name">La Marca Oscura</div>
+    <div class="sb-campaign-session">Sesión 3 · Arco I</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-item active" onclick="switchView('campaign')"><div class="sb-item-icon">📜</div><div class="sb-item-name">Campaña</div></div>
+    <div class="sb-item" onclick="switchView('scenes')"><div class="sb-item-icon">🎬</div><div class="sb-item-name">Escenas</div></div>
+    <div class="sb-item" onclick="switchView('library')"><div class="sb-item-icon">📖</div><div class="sb-item-name">Biblioteca</div></div>
+    <div class="sb-item" onclick="switchView('players')"><div class="sb-item-icon">👥</div><div class="sb-item-name">Personajes</div></div>
+    <div class="sb-item" onclick="switchView('session')"><div class="sb-item-icon">⚡</div><div class="sb-item-name">Sesión en Vivo</div></div>
+  </nav>
+  <hr class="sb-divider">
+  <div class="sb-players">
+    <div class="sb-players-label">EN MESA</div>
+    <div class="sb-player-list">
+      <div class="sb-player" style="background:#2d3a5e;color:#8aa4d4" title="Eneas — Casa Vorin">E</div>
+      <div class="sb-player" style="background:#5e2d2d;color:#d48a8a" title="Valeska — Orden Escarlata">V</div>
+      <div class="sb-player" style="background:#2d5e3a;color:#8ad48a" title="Arken — Casa Cherán">A</div>
+      <div class="sb-player" style="background:#5e2d5e;color:#d48ad4" title="Lyra — Pueblos sin Techo">L</div>
+    </div>
+  </div>
+  <div class="sb-settings" onclick="switchView('settings')">⚙️ Configuración</div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb" id="breadcrumb">📜 Campaña › Arco I › <span>Sesión 3</span></div>
+    <div class="topbar-spacer"></div>
+    <button class="btn btn-gold" id="btn-add-scene" onclick="addSporadicScene()">+ Escena rápida</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ════════ CAMPAIGN ════════ -->
+    <div class="view active" id="view-campaign">
+      <div class="section-label">ARCO NARRATIVO</div>
+      <div class="beats-row">
+        <div class="beat-card active" onclick="selectBeat(this)"><div class="beat-num">BEAT 1</div><div class="beat-name">La llamada a la aventura</div><div class="beat-status">3 escenas · Sesión 1–2</div><div class="beat-bar"><div class="beat-fill" style="width:100%"></div></div></div>
+        <div class="beat-connector">—</div>
+        <div class="beat-card" onclick="selectBeat(this)"><div class="beat-num">BEAT 2</div><div class="beat-name">El primer encuentro</div><div class="beat-status">4 escenas · Sesión 3</div><div class="beat-bar"><div class="beat-fill" style="width:50%"></div></div></div>
+        <div class="beat-connector">—</div>
+        <div class="beat-card dim" onclick="selectBeat(this)"><div class="beat-num">BEAT 3</div><div class="beat-name">La traición</div><div class="beat-status">Pendiente</div><div class="beat-bar"><div class="beat-fill" style="width:0%"></div></div></div>
+        <div class="beat-connector">—</div>
+        <div class="beat-card dim" onclick="selectBeat(this)"><div class="beat-num">BEAT 4</div><div class="beat-name">El clímax</div><div class="beat-status">Pendiente</div><div class="beat-bar"><div class="beat-fill" style="width:0%"></div></div></div>
+        <div style="flex-shrink:0;display:flex;align-items:center"><button class="btn" title="Agregar beat">+</button></div>
+      </div>
+      <div class="scenes-header flex-between">
+        <div class="section-label" style="margin:0">ESCENAS — SESIÓN 3</div>
+        <button class="btn" onclick="switchView('scenes')">+ Nueva escena</button>
+      </div>
+      <div class="scene-grid">
+        <div class="scene-card combat" onclick="openScene()">
+          <span class="scene-badge badge-combat">Combate</span>
+          <span class="scene-status status-debrief">✓ Debrief</span>
+          <div class="scene-name">Emboscada en el puente</div>
+          <div class="scene-detail">Hook: Los árboles se silencian de golpe</div>
+          <div class="scene-detail">4 Sombras + 1 Capitán de la Marca</div>
+          <div class="scene-flag flag-consequence">⚠ El capitán escapó herido — sabe dónde están</div>
+          <div style="margin-top:10px"><button class="btn btn-primary" onclick="event.stopPropagation();startCombat(sampleEncounter)" style="width:100%;justify-content:center">Iniciar combate</button></div>
+        </div>
+        <div class="scene-card social" onclick="openScene()">
+          <span class="scene-badge badge-social">Social</span>
+          <span class="scene-status status-debrief">✓ Debrief</span>
+          <div class="scene-name">El Consejo del Alcalde</div>
+          <div class="scene-detail">NPCs: Alcalde Brenn, Spy Lysa</div>
+          <div class="scene-detail">Revela: La marca en el mapa antiguo</div>
+          <div class="scene-flag flag-personal">🎭 Eneas recibió info de Casa Vorin sobre su padre</div>
+        </div>
+        <div class="scene-card sporadic" onclick="openScene()">
+          <span class="scene-badge badge-sporadic">Esporádica</span>
+          <span class="scene-status status-active">▶ Activa</span>
+          <div class="scene-name">La tienda del alquimista</div>
+          <div class="scene-detail">Comercio / Exploración</div>
+          <div class="scene-detail">NPC: Gruk (creado al vuelo)</div>
+        </div>
+        <div class="scene-card exploration" onclick="openScene()">
+          <span class="scene-badge badge-exploration">Exploración</span>
+          <span class="scene-status status-ready">Lista</span>
+          <div class="scene-name">Las ruinas bajo el molino</div>
+          <div class="scene-detail">Hook: Ruidos bajo la tierra por la noche</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ SCENE BUILDER ════════ -->
+    <div class="view" id="view-scenes">
+      <div class="section-label">SCENE BUILDER</div>
+      <div class="type-selector">
+        <div class="type-option selected" data-type="combat" onclick="selectType(this)"><span class="dot"></span> Combate</div>
+        <div class="type-option" data-type="social" onclick="selectType(this)"><span class="dot"></span> Social</div>
+        <div class="type-option" data-type="exploration" onclick="selectType(this)"><span class="dot"></span> Exploración</div>
+        <div class="type-option" data-type="revelation" onclick="selectType(this)"><span class="dot"></span> Revelación</div>
+      </div>
+      <div class="builder-layout">
+        <div class="builder-main">
+          <div class="builder-tabs">
+            <div class="builder-tab active" onclick="switchBuilderTab(this,'setup')">Setup</div>
+            <div class="builder-tab" onclick="switchBuilderTab(this,'participants')">Participantes</div>
+            <div class="builder-tab" onclick="switchBuilderTab(this,'objectives')">Objetivos</div>
+            <div class="builder-tab" onclick="switchBuilderTab(this,'notes')">Notas DM</div>
+            <div class="builder-tab tab-debrief" onclick="switchBuilderTab(this,'debrief')">Debrief</div>
+          </div>
+
+          <!-- SETUP -->
+          <div class="builder-panel active" id="panel-setup">
+            <div class="form-section"><div class="form-label">NOMBRE DE LA ESCENA</div><input class="form-input" type="text" placeholder="Ej: Emboscada en el puente de Thornwall"></div>
+            <div class="form-section"><div class="form-label">HOOK — ¿Cómo abre la escena?</div><textarea class="form-input" placeholder="La descripción ambiental, el sonido, lo primero que perciben los jugadores..."></textarea></div>
+            <div class="form-section"><div class="form-label">CONFLICTO — ¿Qué hay que resolver?</div><textarea class="form-input" placeholder="El problema central. Combate: enemigos y terreno. Social: la tensión entre los NPCs..."></textarea></div>
+            <div class="form-section"><div class="form-label">STAKES</div><div class="stakes-row"><div class="stake-box stake-fail"><div class="stake-label">SI FALLAN</div><textarea class="form-input" placeholder="¿Qué pierden? ¿Qué empeora?"></textarea></div><div class="stake-box stake-win"><div class="stake-label">SI TRIUNFAN</div><textarea class="form-input" placeholder="¿Qué ganan? ¿Qué se desbloquea?"></textarea></div></div></div>
+            <div class="form-section"><div class="form-label">BEAT DE SALIDA — ¿Cómo conecta con lo siguiente?</div><textarea class="form-input" placeholder="La frase final, la revelación, el cliffhanger..."></textarea></div>
+
+            <!-- Lair Actions (combat only) -->
+            <div class="form-section combat-only visible">
+              <div class="form-label">LAIR ACTIONS — El mundo reacciona (solo combate)</div>
+              <div class="lair-section">
+                <label class="lair-check"><input type="checkbox" checked> La niebla se espesa — visibilidad reducida</label>
+                <label class="lair-check"><input type="checkbox"> El terreno colapsa — movimiento difícil</label>
+                <label class="lair-check"><input type="checkbox"> El fuego se expande — daño por zona</label>
+                <label class="lair-check"><input type="checkbox"> Cae un árbol — bloquea camino</label>
+                <label class="lair-check"><input type="checkbox"> Refuerzos enemigos llegan</label>
+                <label class="lair-check"><input type="checkbox"> Descarga arcana — daño aleatorio</label>
+                <label class="lair-check"><input type="checkbox"> Sube el agua — terreno cambia</label>
+                <label class="lair-check"><input type="checkbox"> Se abre el suelo — peligro de caída</label>
+                <textarea class="form-input" style="margin-top:8px;background:var(--surface)" placeholder="Lair Actions personalizadas..."></textarea>
+              </div>
+            </div>
+
+            <!-- Recompensas -->
+            <div class="form-section">
+              <div class="form-label">RECOMPENSAS DE ESTA ESCENA</div>
+              <div style="display:flex;gap:8px;margin-bottom:10px">
+                <button class="btn">+ Desde biblioteca</button>
+                <button class="btn">+ Crear item</button>
+              </div>
+              <div class="loot-card">
+                <span class="loot-rarity rarity-uncommon">Poco común</span>
+                <div class="loot-name">Antídoto de Gruk</div>
+                <div class="loot-type">Consumible · Se entrega si triunfan</div>
+                <div class="loot-effect">Cura veneno de sombra. Uso único. Puede salvar al Alcalde Brenn en la Sesión 4.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PARTICIPANTS -->
+          <div class="builder-panel" id="panel-participants">
+            <div class="form-section">
+              <div class="flex-between mb-16"><div class="form-label" style="margin:0">NPCs EN ESTA ESCENA</div><button class="btn">+ Desde biblioteca</button></div>
+              <div class="npc-card">
+                <div class="npc-name">Gruk el Alquimista</div>
+                <div class="npc-role">Goblin · Comerciante · Neutral caótico</div>
+                <div class="npc-detail">Motivación: Sobrevivir y acumular secretos<br>Sabe: La marca es de la Orden Negra<br>Quiere: Que lo protejan del gremio</div>
+                <div class="npc-voice">"Gruk sabe cosas, sí sí... pero Gruk no regala."</div>
+              </div>
+              <button class="btn" style="width:100%;justify-content:center">+ Crear NPC al vuelo</button>
+            </div>
+            <div class="form-section combat-only visible">
+              <div class="flex-between mb-16"><div class="form-label" style="margin:0">CRIATURAS EN COMBATE</div><button class="btn">+ Desde bestiario</button></div>
+              <div class="creature-card">
+                <div style="display:flex;align-items:center;justify-content:space-between"><div><span class="creature-name">Sombra de la Marca</span><span style="color:var(--ink3);font-size:13px"> ×4</span></div><span class="difficulty-tag diff-medium">Medio</span></div>
+                <div class="creature-type">No-muerto · Soldado corrupto</div>
+                <div class="creature-stats-row"><span class="creature-stat hp">HP 15 c/u</span><span class="creature-stat dmg">Daño 4–8</span><span class="creature-stat special">Toque corrupto</span></div>
+              </div>
+              <div class="creature-card">
+                <div style="display:flex;align-items:center;justify-content:space-between"><div><span class="creature-name">Capitán de la Marca</span><span style="color:var(--ink3);font-size:13px"> ×1</span></div><span class="difficulty-tag diff-hard">Duro</span></div>
+                <div class="creature-type">Humanoide · Líder táctico</div>
+                <div class="creature-stats-row"><span class="creature-stat hp">HP 30</span><span class="creature-stat dmg">Daño 6–12</span><span class="creature-stat special">Grito de mando</span></div>
+              </div>
+              <button class="btn" style="width:100%;justify-content:center">+ Crear criatura al vuelo</button>
+              <div class="difficulty-meter"><div class="dm-label">DIFICULTAD ESTIMADA</div><div class="dm-bar"><div class="dm-fill medium"></div></div><div class="dm-text"><span style="color:var(--orange);font-weight:600">Desafiante</span><span style="color:var(--ink3)">4 Sombras + 1 Capitán vs Plano 2–3</span></div></div>
+            </div>
+          </div>
+
+          <!-- OBJECTIVES -->
+          <div class="builder-panel" id="panel-objectives">
+            <div class="form-section"><div class="form-label">CAPA 1 — OBJETIVO DE SESIÓN (visible para todos)</div><input class="form-input" type="text" placeholder="La misión macro. Ej: Descubrir qué hay bajo el molino"></div>
+            <div class="form-section"><div class="form-label">CAPA 2 — OBJETIVOS DE ESCENA (pintarrón)</div><textarea class="form-input" placeholder="• Hablar con el alquimista&#10;• Conseguir el antídoto&#10;• No revelar que saben de la Marca"></textarea></div>
+            <div class="form-section"><div class="form-label">CAPA 3 — OBJETIVOS PERSONALES (privado por jugador)</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:10px;align-items:center"><div class="sb-player" style="background:#2d3a5e;color:#8aa4d4">E</div><input class="form-input" type="text" placeholder="Objetivo personal de Eneas..." style="flex:1"></div>
+                <div style="display:flex;gap:10px;align-items:center"><div class="sb-player" style="background:#5e2d2d;color:#d48a8a">V</div><input class="form-input" type="text" placeholder="Objetivo personal de Valeska..." style="flex:1"></div>
+                <div style="display:flex;gap:10px;align-items:center"><div class="sb-player" style="background:#2d5e3a;color:#8ad48a">A</div><input class="form-input" type="text" placeholder="Objetivo personal de Arken..." style="flex:1"></div>
+                <div style="display:flex;gap:10px;align-items:center"><div class="sb-player" style="background:#5e2d5e;color:#d48ad4">L</div><input class="form-input" type="text" placeholder="Objetivo personal de Lyra..." style="flex:1"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOTES -->
+          <div class="builder-panel" id="panel-notes">
+            <div class="form-section"><div class="form-label">NOTAS PRIVADAS DEL DM</div><textarea class="form-input" style="min-height:140px" placeholder="Recordatorios, giros posibles, música recomendada..."></textarea></div>
+            <div class="form-section"><div class="form-label">FRASES CLAVE PARA LA ESCENA</div><textarea class="form-input" placeholder="Líneas de diálogo, descripciones atmosféricas, momentos dramáticos..."></textarea></div>
+          </div>
+
+          <!-- DEBRIEF -->
+          <div class="builder-panel" id="panel-debrief">
+            <div style="padding:12px 16px;background:var(--red-light);border:2px solid var(--red);border-radius:var(--r);margin-bottom:16px;font-size:14px;color:var(--red)">El debrief se activa cuando marcas la escena como jugada.</div>
+            <div class="form-section"><div class="form-label">¿QUÉ PASÓ REALMENTE?</div><textarea class="form-input" style="min-height:120px" placeholder="Narra lo que sucedió en la mesa..."></textarea></div>
+            <div class="form-section"><div class="form-label">OBJETIVOS CUMPLIDOS</div>
+              <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--ink2)">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green)"> Hablar con el alquimista</label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green)"> Conseguir el antídoto</label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;min-height:44px"><input type="checkbox" style="width:20px;height:20px;accent-color:var(--green)"> No revelar que saben de la Marca</label>
+              </div>
+            </div>
+            <div class="form-section"><div class="form-label">CONSECUENCIAS — Flags para escenas futuras</div><textarea class="form-input" placeholder="¿Qué cambió? ¿Qué hicieron los jugadores que afecta lo que viene?"></textarea></div>
+            <div style="display:flex;gap:8px;margin-top:16px"><button class="btn btn-primary" style="flex:1;justify-content:center">Guardar debrief</button><button class="btn" style="flex:1;justify-content:center">Cerrar escena</button></div>
+          </div>
+        </div>
+
+        <!-- SIDE PANEL -->
+        <div class="builder-side">
+          <div class="form-label" style="margin-bottom:10px">NPCs DISPONIBLES</div>
+          <div class="npc-card" style="cursor:pointer"><div class="npc-name">Gruk el Alquimista</div><div class="npc-role">Goblin · Comerciante</div><div class="npc-voice">"Gruk sabe cosas..."</div></div>
+          <div class="npc-card" style="cursor:pointer"><div class="npc-name">Alcalde Brenn</div><div class="npc-role">Humano · Autoridad local</div></div>
+          <div class="form-label" style="margin-top:16px;margin-bottom:10px">VILLANOS ACTIVOS</div>
+          <div class="villain-card-lib" style="cursor:pointer"><div class="villain-label">VILLANO ACTIVO</div><div class="npc-name" style="font-size:15px;font-weight:700;font-family:var(--serif)">Malachar, el Tejedor</div><div class="npc-detail" style="font-size:13px;color:var(--ink2);margin-top:4px">Move: Envió espías al pueblo</div></div>
+          <div class="form-label" style="margin-top:16px;margin-bottom:10px">BESTIARIO RÁPIDO</div>
+          <div class="creature-card" style="cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><span class="creature-name" style="font-size:13px">Sombra de la Marca</span><span class="difficulty-tag diff-medium">Medio</span></div><div class="creature-stats-row" style="margin-top:4px"><span class="creature-stat hp" style="font-size:11px">HP 15</span><span class="creature-stat dmg" style="font-size:11px">4–8</span></div></div>
+          <div class="creature-card" style="cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><span class="creature-name" style="font-size:13px">Araña del Velo</span><span class="difficulty-tag diff-easy">Fácil</span></div><div class="creature-stats-row" style="margin-top:4px"><span class="creature-stat hp" style="font-size:11px">HP 8</span><span class="creature-stat dmg" style="font-size:11px">2–5</span></div></div>
+          <div class="creature-card" style="cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><span class="creature-name" style="font-size:13px">Golem de Runas</span><span class="difficulty-tag diff-hard">Duro</span></div><div class="creature-stats-row" style="margin-top:4px"><span class="creature-stat hp" style="font-size:11px">HP 40</span><span class="creature-stat dmg" style="font-size:11px">8–14</span></div></div>
+          <button class="btn" style="width:100%;justify-content:center;margin-top:8px">Ver bestiario completo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ LIBRARY ════════ -->
+    <div class="view" id="view-library">
+      <div class="section-label">BIBLIOTECA</div>
+      <div class="lib-category-tabs">
+        <div class="lib-cat-tab active" onclick="switchLibCategory(this,'npcs')">NPCs <span class="tab-count">4</span></div>
+        <div class="lib-cat-tab" onclick="switchLibCategory(this,'villains')">Villanos <span class="tab-count">2</span></div>
+        <div class="lib-cat-tab" onclick="switchLibCategory(this,'bestiary')">Bestiario <span class="tab-count">5</span></div>
+        <div class="lib-cat-tab" onclick="switchLibCategory(this,'loot')">Loot <span class="tab-count">4</span></div>
+      </div>
+
+      <!-- NPCs -->
+      <div class="lib-content active" id="lib-npcs">
+        <div style="margin-bottom:12px"><button class="btn btn-primary">+ Nuevo NPC</button></div>
+        <div class="library-layout">
+          <div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar por nombre o rol..."></div><div class="library-item active"><div class="li-name">Gruk el Alquimista</div><div class="li-role">Goblin · Comerciante</div></div><div class="library-item"><div class="li-name">Alcalde Brenn</div><div class="li-role">Humano · Autoridad</div></div><div class="library-item"><div class="li-name">Spy Lysa</div><div class="li-role">Elfa · Informante · Casa Vorin</div></div><div class="library-item"><div class="li-name">Hermana Kaelen</div><div class="li-role">Humana · Orden Escarlata</div></div></div>
+          <div class="library-detail"><div class="detail-header"><div class="detail-name">Gruk el Alquimista</div><div class="detail-role">Goblin · Comerciante · Neutral caótico</div></div><div class="detail-section"><div class="detail-section-label">MOTIVACIÓN</div><div class="detail-section-value">Sobrevivir y acumular secretos. Gruk colecciona información como otros coleccionan monedas.</div></div><div class="detail-section"><div class="detail-section-label">LO QUE SABE</div><div class="detail-section-value">La marca es el símbolo de la Orden Negra. Vio al capitán Vex reunirse con alguien encapuchado en el molino.</div></div><div class="detail-section"><div class="detail-section-label">LO QUE QUIERE</div><div class="detail-section-value">Protección del gremio de ladrones. Dispuesto a intercambiar información por seguridad.</div></div><div class="detail-voice">"Gruk sabe cosas, sí sí... pero Gruk no regala. Todo tiene precio. ¿Qué ofreces tú?"</div><div class="detail-section" style="margin-top:16px"><div class="detail-section-label">APARECE EN</div><span class="scene-badge badge-sporadic" style="cursor:pointer">Tienda del alquimista</span></div></div>
+        </div>
+      </div>
+
+      <!-- Villains -->
+      <div class="lib-content" id="lib-villains">
+        <div style="margin-bottom:12px"><button class="btn" style="border-color:var(--red);color:var(--red)">+ Nuevo Villano</button></div>
+        <div class="library-layout">
+          <div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar villano..."></div><div class="library-item active"><div class="li-status"><span class="villain-status vs-active" style="font-size:10px">Activo</span></div><div class="li-name" style="color:var(--red)">Malachar, el Tejedor</div><div class="li-role">Humano · Villano principal</div></div><div class="library-item"><div class="li-status"><span class="villain-status vs-prepared" style="font-size:10px">Preparado</span></div><div class="li-name" style="color:var(--red)">Capitán Vex</div><div class="li-role">Humano · Agente</div></div></div>
+          <div class="library-detail"><div style="border-left:5px solid var(--red);padding-left:16px"><div class="detail-header"><div style="display:flex;align-items:center;gap:10px"><div class="detail-name">Malachar, el Tejedor</div><span class="villain-status vs-active">Activo</span></div><div class="detail-role">Humano · Líder de la Orden Negra · Plano 4</div></div></div><div class="detail-section"><div class="detail-section-label">MOTIVACIÓN</div><div class="detail-section-value">Restaurar la Orden Negra. Cree que el Rompimiento fue una oportunidad.</div></div><div class="detail-section"><div class="detail-section-label">ARCO NARRATIVO</div><div class="detail-section-value">Fase 1: Infiltración (activa). Fase 2: Provocación. Fase 3: El Ritual.</div></div><div class="detail-section"><div class="detail-section-label">STATS DE COMBATE</div><div class="creature-stats-row"><span class="creature-stat hp">HP 45</span><span class="creature-stat dmg">Daño 8–14</span><span class="creature-stat special">Magia de sombra</span></div></div><div class="detail-section"><div class="detail-section-label">MOVES ENTRE SESIONES</div><div class="detail-section-value"><span style="text-decoration:line-through;color:var(--ink4)">✓ Enviar al Capitán Vex a infiltrar el pueblo</span><br>▶ Enviar espías tras el grupo<br>○ Activar la célula dormida en la capital</div></div></div>
+        </div>
+      </div>
+
+      <!-- Bestiary -->
+      <div class="lib-content" id="lib-bestiary">
+        <div style="margin-bottom:12px"><button class="btn btn-primary">+ Nueva criatura</button></div>
+        <div class="library-layout">
+          <div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar criatura..."></div><div class="library-item active"><div class="li-name">Sombra de la Marca</div><div class="li-role">No-muerto · <span class="difficulty-tag diff-medium">Medio</span></div></div><div class="library-item"><div class="li-name">Araña del Velo</div><div class="li-role">Bestia · <span class="difficulty-tag diff-easy">Fácil</span></div></div><div class="library-item"><div class="li-name">Golem de Runas</div><div class="li-role">Constructo · <span class="difficulty-tag diff-hard">Duro</span></div></div><div class="library-item"><div class="li-name">Lobo Espectral</div><div class="li-role">No-muerto · <span class="difficulty-tag diff-easy">Fácil</span></div></div><div class="library-item"><div class="li-name">El Heraldo</div><div class="li-role">Elemental · <span class="difficulty-tag diff-boss">Jefe</span></div></div></div>
+          <div class="library-detail"><div class="detail-header"><div style="display:flex;align-items:center;gap:10px"><div class="detail-name">Sombra de la Marca</div><span class="difficulty-tag diff-medium">Medio</span></div><div class="detail-role">No-muerto · Soldado corrupto por la Orden Negra</div></div><div class="detail-section"><div class="detail-section-label">DESCRIPCIÓN NARRATIVA</div><div class="detail-section-value">Una silueta humanoide envuelta en humo negro. Los ojos son dos puntos de luz violeta. No habla — gruñe.</div></div><div class="detail-section"><div class="detail-section-label">STATS DE COMBATE</div><div class="creature-stats-row"><span class="creature-stat hp">HP 15</span><span class="creature-stat dmg">Daño 4–8</span><span class="creature-stat special">Toque corrupto</span><span class="creature-stat">Resist: Físico</span></div></div><div class="detail-section"><div class="detail-section-label">HABILIDADES</div><div class="detail-section-value"><strong>Toque corrupto:</strong> Al golpear, -1 Aen adicional.<br><strong>Reformar:</strong> Sin daño de fuego/luz, reaparece en 2 turnos con HP/2.</div></div><div class="detail-section"><div class="detail-section-label">TERRENO</div><span class="creature-terrain">🌲 Bosque</span><span class="creature-terrain">🏚️ Ruinas</span><span class="creature-terrain">🌙 Nocturno</span></div><div class="detail-section"><div class="detail-section-label">LAIR ACTIONS SUGERIDAS</div><div class="detail-section-value" style="color:var(--orange);font-style:italic">Niebla oscura se espesa · Sombra emerge de cadáver · Suelo con escarcha negra</div></div></div>
+        </div>
+      </div>
+
+      <!-- Loot -->
+      <div class="lib-content" id="lib-loot">
+        <div style="margin-bottom:12px"><button class="btn btn-primary">+ Nuevo item</button></div>
+        <div class="library-layout">
+          <div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar item..."></div><div class="library-item active"><div class="li-status"><span class="loot-rarity rarity-rare" style="font-size:10px;float:none">Raro</span></div><div class="li-name">Daga del Silencio</div><div class="li-role">Arma · Sin entregar</div></div><div class="library-item"><div class="li-status"><span class="loot-rarity rarity-legendary" style="font-size:10px;float:none">Legendario</span></div><div class="li-name">El Mapa de la Marca</div><div class="li-role">Narrativo · Entregado ✓</div></div><div class="library-item"><div class="li-status"><span class="loot-rarity rarity-uncommon" style="font-size:10px;float:none">Poco común</span></div><div class="li-name">Antídoto de Gruk</div><div class="li-role">Consumible · Sin entregar</div></div><div class="library-item"><div class="li-status"><span class="loot-rarity rarity-common" style="font-size:10px;float:none">Común</span></div><div class="li-name">Carta del Herrero</div><div class="li-role">Información · Entregado ✓</div></div></div>
+          <div class="library-detail"><div class="detail-header"><div style="display:flex;align-items:center;gap:10px"><div class="detail-name">Daga del Silencio</div><span class="loot-rarity rarity-rare">Raro</span></div><div class="detail-role">Arma · Cuerpo a cuerpo</div></div><div class="detail-section"><div class="detail-section-label">DESCRIPCIÓN</div><div class="detail-section-value">Una daga de hoja negra mate que no refleja luz. El mango está envuelto en cuero de serpiente del Velo. No hace sonido al cortar.</div></div><div class="detail-section"><div class="detail-section-label">EFECTO</div><div class="loot-effect" style="font-size:14px;color:var(--gold);font-style:italic;padding:10px 14px;background:var(--gold-pale);border-radius:var(--r)">+2 daño desde sigilo. 1/encuentro: primer ataque no rompe invisibilidad.</div></div><div class="detail-section"><div class="detail-section-label">SE ENTREGA EN</div><span class="loot-scene-link">Las ruinas bajo el molino — cofre tras el altar</span></div><div class="detail-section"><div class="detail-section-label">PARA</div><div style="display:flex;gap:8px;align-items:center"><div class="sb-player" style="background:#5e2d5e;color:#d48ad4">L</div><span style="font-size:14px;color:var(--ink2)">Lyra — conecta con su backstory</span></div></div><div class="detail-section"><div class="detail-section-label">ESTADO</div><div style="display:flex;gap:10px;align-items:center"><span style="font-size:14px;color:var(--ink3)">Sin entregar</span><button class="btn">Marcar como entregado</button></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ PLAYERS ════════ -->
+    <div class="view" id="view-players">
+      <div class="section-label">PERSONAJES JUGADORES</div>
+      <div class="player-grid">
+        <div class="player-card" style="border-color:#4a6aaa"><div class="player-card-header"><div class="player-avatar" style="background:#2d3a5e;color:#8aa4d4">E</div><div><div class="player-card-name">Eneas</div><div class="player-card-class">Caballero · Plano 3</div></div></div><div class="player-meta"><span class="player-tag faction">Casa Vorin</span><span class="player-tag">Fuerza</span><span class="player-tag">Vía del Coraje</span></div><div class="player-objective"><div class="player-objective-label">OBJETIVO PERSONAL — SESIÓN 3</div>Descubrir qué sabe el alquimista sobre el paradero de su padre, desaparecido en una ruta comercial de Casa Vorin.</div><div class="echo-tracker"><div class="echo-tracker-label">ECHO POINTS</div><div class="echo-dots"><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div></div></div></div>
+        <div class="player-card" style="border-color:#aa4a4a"><div class="player-card-header"><div class="player-avatar" style="background:#5e2d2d;color:#d48a8a">V</div><div><div class="player-card-name">Valeska</div><div class="player-card-class">Guardián · Plano 2</div></div></div><div class="player-meta"><span class="player-tag faction">Orden Escarlata</span><span class="player-tag">Fuerza</span><span class="player-tag">Vía de la Empatía</span></div><div class="player-objective"><div class="player-objective-label">OBJETIVO PERSONAL — SESIÓN 3</div>Encontrar pistas sobre la hermandad destruida. Alguien en el pueblo vio algo esa noche.</div><div class="echo-tracker"><div class="echo-tracker-label">ECHO POINTS</div><div class="echo-dots"><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div></div></div></div>
+        <div class="player-card" style="border-color:#4aaa5a"><div class="player-card-header"><div class="player-avatar" style="background:#2d5e3a;color:#8ad48a">A</div><div><div class="player-card-name">Arken</div><div class="player-card-class">Mago · Plano 2</div></div></div><div class="player-meta"><span class="player-tag faction">Casa Cherán</span><span class="player-tag">Magia</span><span class="player-tag">Vía de la Sabiduría</span></div><div class="player-objective"><div class="player-objective-label">OBJETIVO PERSONAL — SESIÓN 3</div>Investigar las runas inestables del molino. Puede que estén conectadas con el Rompimiento.</div><div class="echo-tracker"><div class="echo-tracker-label">ECHO POINTS</div><div class="echo-dots"><div class="echo-dot filled">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div><div class="echo-dot">✦</div></div></div></div>
+        <div class="player-card" style="border-color:#aa4aaa"><div class="player-card-header"><div class="player-avatar" style="background:#5e2d5e;color:#d48ad4">L</div><div><div class="player-card-name">Lyra</div><div class="player-card-class">Pícara · Plano 3</div></div></div><div class="player-meta"><span class="player-tag faction">Pueblos sin Techo</span><span class="player-tag">Fuerza</span><span class="player-tag">Vía del Sacrificio</span></div><div class="player-objective"><div class="player-objective-label">OBJETIVO PERSONAL — SESIÓN 3</div>Proteger al grupo de jóvenes refugiados fuera del pueblo. Alguien los está siguiendo.</div><div class="echo-tracker"><div class="echo-tracker-label">ECHO POINTS</div><div class="echo-dots"><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot filled">✦</div><div class="echo-dot">✦</div></div></div></div>
+      </div>
+    </div>
+
+    <!-- ════════ SESSION ════════ -->
+    <div class="view" id="view-session">
+      <div id="session-content"></div>
+    </div>
+
+    <!-- ════════ SETTINGS ════════ -->
+    <div class="view" id="view-settings">
+      <div class="section-label">CONFIGURACIÓN</div>
+
+      <!-- Game Data Info -->
+      <div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px">
+        <div class="form-label">GAME DATA CARGADA</div>
+        <div id="gamedata-info" style="font-size:14px;color:var(--ink2);line-height:1.8"></div>
+      </div>
+
+      <!-- Export -->
+      <div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px">
+        <div class="form-label">EXPORTAR DATOS (descargar JSON)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+          <button class="btn" onclick="exportDB('campaign')">Campaña</button>
+          <button class="btn" onclick="exportDB('sessions')">Sesiones</button>
+          <button class="btn" onclick="exportDB('scenes')">Escenas</button>
+          <button class="btn" onclick="exportDB('npcs')">NPCs</button>
+          <button class="btn" onclick="exportDB('villains')">Villanos</button>
+          <button class="btn" onclick="exportDB('bestiary')">Bestiario</button>
+          <button class="btn" onclick="exportDB('loot')">Loot</button>
+          <button class="btn" onclick="exportDB('players')">Jugadores</button>
+          <button class="btn btn-primary" onclick="exportAll()">Exportar TODO</button>
+        </div>
+      </div>
+
+      <!-- Import -->
+      <div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px">
+        <div class="form-label">IMPORTAR DATOS (cargar JSON)</div>
+        <div style="margin-top:8px">
+          <input type="file" id="import-file" accept=".json" style="font-size:14px" onchange="importDB(this)">
+        </div>
+        <div id="import-status" style="margin-top:8px;font-size:13px;color:var(--ink3)"></div>
+      </div>
+
+      <!-- Reset -->
+      <div style="background:var(--surface);border:2px solid var(--red);border-radius:var(--r-lg);padding:18px">
+        <div class="form-label" style="color:var(--red)">ZONA DE PELIGRO</div>
+        <button class="btn" style="border-color:var(--red);color:var(--red);margin-top:8px" onclick="if(confirm('¿Borrar TODOS los datos y resetear a valores iniciales? Esto no se puede deshacer.')){resetAllData()}">Resetear todos los datos</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="gamedata.js"></script>
+<script>
+/* ══════════════════════════════════════════════
+   DATABASE LAYER — localStorage CRUD
+   ══════════════════════════════════════════════ */
+var DB_PREFIX = 'eqsm_';
+var DB_TABLES = ['campaign','sessions','scenes','npcs','villains','bestiary','loot','players'];
+
+function dbKey(table){ return DB_PREFIX + table; }
+
+function dbLoad(table){
+  try{ var d=localStorage.getItem(dbKey(table)); return d?JSON.parse(d):null; }
+  catch(e){ console.error('DB load error:',table,e); return null; }
+}
+
+function dbSave(table, data){
+  try{ localStorage.setItem(dbKey(table), JSON.stringify(data)); return true; }
+  catch(e){ console.error('DB save error:',table,e); return false; }
+}
+
+function dbGetAll(table){ return dbLoad(table) || []; }
+
+function dbGetById(table, id){
+  var items = dbGetAll(table);
+  return items.find(function(i){ return i.id === id; }) || null;
+}
+
+function dbCreate(table, item){
+  var items = dbGetAll(table);
+  if(!item.id) item.id = table.substring(0,3) + '-' + Date.now().toString(36);
+  item.createdAt = new Date().toISOString();
+  items.push(item);
+  dbSave(table, items);
+  return item;
+}
+
+function dbUpdate(table, id, updates){
+  var items = dbGetAll(table);
+  var idx = items.findIndex(function(i){ return i.id === id; });
+  if(idx === -1) return null;
+  Object.keys(updates).forEach(function(k){ items[idx][k] = updates[k]; });
+  items[idx].updatedAt = new Date().toISOString();
+  dbSave(table, items);
+  return items[idx];
+}
+
+function dbDelete(table, id){
+  var items = dbGetAll(table);
+  items = items.filter(function(i){ return i.id !== id; });
+  dbSave(table, items);
+}
+
+/* ── SEED DATA ── */
+function seedDatabase(){
+  // Only seed if no data exists
+  if(dbLoad('players')) return;
+
+  dbSave('players', [
+    {id:'p1',name:'Eneas',initial:'E',classId:'knight',subclassId:'protector',kitId:'bastion',plano:3,factionId:'vorin',featChosen:0,bg:'#2d3a5e',fg:'#8aa4d4',echo:2,backstory:'Hijo de un comerciante de Casa Vorin desaparecido en una ruta comercial.'},
+    {id:'p2',name:'Valeska',initial:'V',classId:'knight',subclassId:'martyr',kitId:'juramento',plano:2,factionId:'escarlata',featChosen:0,bg:'#5e2d2d',fg:'#d48a8a',echo:3,backstory:'Miembro de una hermandad destruida. Busca respuestas.'},
+    {id:'p3',name:'Arken',initial:'A',classId:'wizard',subclassId:'elementalist',kitId:'conducto',plano:2,factionId:'cheran',featChosen:2,bg:'#2d5e3a',fg:'#8ad48a',echo:1,backstory:'Estudioso de las runas inestables post-Rompimiento.'},
+    {id:'p4',name:'Lyra',initial:'L',classId:'shadow',subclassId:'phantom',kitId:'dagas',plano:3,factionId:'pueblos',featChosen:1,bg:'#5e2d5e',fg:'#d48ad4',echo:4,backstory:'Protectora de jóvenes refugiados. Alguien los sigue.'}
+  ]);
+
+  dbSave('npcs', [
+    {id:'npc-001',name:'Gruk el Alquimista',role:'Comerciante',race:'Goblin',alignment:'Neutral caótico',motivation:'Sobrevivir y acumular secretos',knows:'La marca es de la Orden Negra. Vio a Vex en el molino.',wants:'Protección del gremio de ladrones',voice:'Gruk sabe cosas, sí sí... pero Gruk no regala.',appearsIn:['scene-003'],tags:['comerciante','informante']},
+    {id:'npc-002',name:'Alcalde Brenn',role:'Autoridad local',race:'Humano',alignment:'Legal neutral',motivation:'Proteger su pueblo a cualquier costo',knows:'La marca apareció hace 3 lunas. Algo viene del molino.',wants:'Que alguien resuelva el problema sin llamar la atención',voice:'Este pueblo no sobrevive otro invierno así.',appearsIn:['scene-002'],tags:['autoridad','aliado']},
+    {id:'npc-003',name:'Spy Lysa',role:'Informante',race:'Elfa',alignment:'Neutral',motivation:'Servir a Casa Vorin recopilando información',knows:'La ruta comercial donde desapareció el padre de Eneas',wants:'Información sobre la Orden Negra para Vorin',voice:'No me busques. Yo te encuentro cuando tenga algo.',appearsIn:['scene-002'],tags:['espía','Casa Vorin']},
+    {id:'npc-004',name:'Hermana Kaelen',role:'Sanadora',race:'Humana',alignment:'Legal bueno',motivation:'Sanar y proteger según el Juramento Escarlata',knows:'Algo destruyó la hermandad de Valeska',wants:'Encontrar sobrevivientes de la hermandad',voice:'El Juramento no distingue entre amigos y desconocidos.',appearsIn:[],tags:['Orden Escarlata','sanadora']}
+  ]);
+
+  dbSave('villains', [
+    {id:'vill-001',name:'Malachar, el Tejedor',role:'Líder de la Orden Negra',status:'active',motivation:'Restaurar la Orden Negra',arc:'Fase 1: Infiltración. Fase 2: Provocación. Fase 3: El Ritual.',stats:{hp:45,dmg:'8-14',special:'Magia de sombra',resist:'Control mental'},abilities:[{name:'Tejo de Sombras',type:'Acción',desc:'Ataque a distancia 8-14.'},{name:'Dominar Voluntad',type:'Acción',desc:'Controla a un objetivo 1 ronda. DC 18.'},{name:'Manto de Oscuridad',type:'Reacción',desc:'Inmune a daño 1 turno. 1/encuentro.'}],moves:[{text:'Enviar al Capitán Vex a infiltrar el pueblo',done:true},{text:'Enviar espías tras el grupo',done:false},{text:'Activar la célula dormida en la capital',done:false}],appearsIn:['scene-001']},
+    {id:'vill-002',name:'Capitán Vex',role:'Agente de Malachar',status:'prepared',motivation:'Servir a Malachar por deuda de sangre',arc:'Infiltración → Emboscada → Huida → Regreso.',stats:{hp:30,dmg:'6-12',special:'Grito de mando',resist:'Miedo'},abilities:[{name:'Espada de Sombra',type:'Acción',desc:'6-12 daño. Crítico: cega 1 turno.'},{name:'Grito de Mando',type:'Acción',desc:'Aliados en radio 4 hacen ataque libre.'}],moves:[{text:'Infiltrar el pueblo disfrazado de mercader',done:true},{text:'Emboscar al grupo en el puente',done:true}],appearsIn:['scene-001']}
+  ]);
+
+  dbSave('bestiary', [
+    {id:'crea-001',name:'Sombra de la Marca',type:'No-muerto',difficulty:'medium',hp:15,dmg:'4-8',resist:'Físico',terrain:['Bosque','Ruinas','Nocturno'],abilities:[{name:'Zarpazo Sombrío',type:'Acción',desc:'Cuerpo a cuerpo 4-8.'},{name:'Toque Corrupto',type:'Acción',desc:'Al golpear, -1 Aen adicional.'},{name:'Reformar',type:'Pasiva',desc:'Sin fuego/luz, reaparece en 2 turnos con HP/2.'}],lairSuggestions:['Niebla oscura','Sombra emerge de cadáver'],description:'Silueta humanoide en humo negro. Ojos violeta. Gruñe.',appearsIn:['scene-001']},
+    {id:'crea-002',name:'Araña del Velo',type:'Bestia',difficulty:'easy',hp:8,dmg:'2-5',resist:'Ninguno',terrain:['Cueva','Ruinas'],abilities:[{name:'Mordisco Venenoso',type:'Acción',desc:'2-5 daño. Envenenado 1 turno.'},{name:'Telaraña',type:'Acción',desc:'Inmoviliza 1 turno. Alcance 3.'}],lairSuggestions:['Telarañas bloquean caminos'],description:'Araña del tamaño de un perro. Patas translúcidas.',appearsIn:[]},
+    {id:'crea-003',name:'Golem de Runas',type:'Constructo',difficulty:'hard',hp:40,dmg:'8-14',resist:'Magia',terrain:['Ruinas','Templo'],abilities:[{name:'Puño de Piedra',type:'Acción',desc:'8-14 daño. Derriba.'},{name:'Absorber Aen',type:'Pasiva',desc:'Inmune a habilidades mágicas. Absorbe Aen gastado contra él.'},{name:'Explosión Rúnica',type:'Acción',desc:'Al morir, explota radio 2 por 10 daño.'}],lairSuggestions:['Runas en el suelo brillan — terreno difícil'],description:'Figura humanoide de piedra con runas brillantes. Silencioso.',appearsIn:[]},
+    {id:'crea-004',name:'Lobo Espectral',type:'No-muerto',difficulty:'easy',hp:10,dmg:'3-6',resist:'Físico',terrain:['Bosque','Nocturno'],abilities:[{name:'Mordisco Fantasmal',type:'Acción',desc:'3-6 daño. Ignora armadura.'},{name:'Aullido',type:'Acción',desc:'Todos en radio 3: Asustado 1 turno.'}],lairSuggestions:['Aullidos lejanos — moral baja'],description:'Lobo translúcido con ojos azules. Se mueve sin sonido.',appearsIn:[]},
+    {id:'crea-005',name:'El Heraldo',type:'Elemental',difficulty:'boss',hp:80,dmg:'12-20',resist:'Físico, Fuego',terrain:['Cualquiera'],abilities:[{name:'Descarga Planar',type:'Acción',desc:'12-20 daño radio 3. Todos derribados.'},{name:'Fisura',type:'Acción',desc:'Abre grieta en el suelo. Terreno difícil permanente.'},{name:'Escudo de Planos',type:'Pasiva',desc:'Reduce todo daño en 5. Inmune a condiciones.'},{name:'Invocar Fragmentos',type:'Acción',desc:'Invoca 2 Sombras de la Marca.'}],lairSuggestions:['La realidad se distorsiona','El cielo cambia de color','Grietas en el suelo emiten luz'],description:'Figura de luz y sombra. Cambia de forma constantemente. No tiene rostro.',appearsIn:[]}
+  ]);
+
+  dbSave('loot', [
+    {id:'loot-001',name:'Daga del Silencio',type:'Arma',rarity:'rare',description:'Hoja negra mate. No refleja luz. No hace sonido.',effect:'+2 daño desde sigilo. 1/encuentro: no rompe invisibilidad.',deliveredInScene:null,intendedFor:'p4',plannedScene:'scene-004',delivered:false},
+    {id:'loot-002',name:'El Mapa de la Marca',type:'Narrativo',rarity:'legendary',description:'Mapa antiguo con marcas que brillan bajo la luna.',effect:'Revela la ubicación de 3 células de la Orden Negra.',deliveredInScene:'scene-002',intendedFor:null,plannedScene:'scene-002',delivered:true},
+    {id:'loot-003',name:'Antídoto de Gruk',type:'Consumible',rarity:'uncommon',description:'Frasco burbujeante con líquido verde.',effect:'Cura veneno de sombra. Uso único. Puede salvar al Alcalde.',deliveredInScene:null,intendedFor:null,plannedScene:'scene-003',delivered:false},
+    {id:'loot-004',name:'Carta del Herrero',type:'Información',rarity:'common',description:'Carta sellada con cera negra.',effect:'Revela que el herrero era informante de la Orden Negra.',deliveredInScene:'scene-001',intendedFor:null,plannedScene:'scene-001',delivered:true}
+  ]);
+
+  dbSave('campaign', {id:'camp-001',name:'La Marca Oscura',currentArc:'arc-001',currentSession:'sess-003',
+    arcs:[{id:'arc-001',name:'La Sombra Crece',order:1,beats:[
+      {id:'beat-001',name:'La llamada a la aventura',order:1,sessions:['sess-001','sess-002']},
+      {id:'beat-002',name:'El primer encuentro',order:2,sessions:['sess-003']},
+      {id:'beat-003',name:'La traición',order:3,sessions:[]},
+      {id:'beat-004',name:'El clímax',order:4,sessions:[]}
+    ]}]
+  });
+
+  dbSave('sessions', [
+    {id:'sess-003',name:'Sesión 3',arcId:'arc-001',beatId:'beat-002',date:'2026-06-15',scenes:['scene-001','scene-002','scene-003','scene-004'],status:'in-progress'}
+  ]);
+
+  dbSave('scenes', [
+    {id:'scene-001',name:'Emboscada en el puente',type:'combat',status:'debriefed',sporadic:false,
+     setup:{hook:'Los árboles se silencian de golpe',conflict:'4 Sombras + 1 Capitán de la Marca',stakesFail:'Pierden al prisionero',stakesWin:'Capturan al capitán',exit:'El capitán escapa: Él ya sabe dónde están...'},
+     participants:{npcIds:[],creatureIds:[{creatureId:'crea-001',qty:4},{creatureId:'crea-005',qty:1}]},
+     lairActions:['La niebla se espesa','El puente cruje'],
+     objectives:{session:'Descubrir qué hay bajo el molino',scene:['Sobrevivir la emboscada','Capturar al capitán vivo'],personal:{p1:'Reconocer el símbolo',p2:'',p3:'Detectar magia de sombra',p4:'Proteger la retaguardia'}},
+     loot:[{lootId:'loot-004',condition:'Registrar al capitán'}],
+     notes:'Música: Batalla Épica.',debrief:{whatHappened:'El capitán escapó herido.',objectivesMet:[true,false],consequences:['El capitán sabe dónde están','Eneas reconoció el símbolo de Vorin']}},
+    {id:'scene-002',name:'El Consejo del Alcalde',type:'narrative',status:'debriefed',sporadic:false,
+     setup:{hook:'El salón huele a miedo',conflict:'El alcalde oculta algo',stakesFail:'No obtienen el mapa',stakesWin:'Alianza con Brenn + el mapa',exit:'Lysa aparece desde las sombras...'},
+     participants:{npcIds:['npc-002','npc-003'],creatureIds:[]},lairActions:[],
+     objectives:{session:'Descubrir qué hay bajo el molino',scene:['Hablar con el alcalde','Obtener el mapa'],personal:{p1:'Info de Casa Vorin sobre su padre',p2:'Preguntar por la hermandad',p3:'',p4:''}},
+     loot:[{lootId:'loot-002',condition:'Convencer al alcalde'}],
+     notes:'',debrief:{whatHappened:'Brenn reveló el mapa. Lysa contactó a Eneas.',objectivesMet:[true,true],consequences:['Eneas tiene pista de su padre','Brenn confía en el grupo']}},
+    {id:'scene-003',name:'La tienda del alquimista',type:'narrative',status:'active',sporadic:true,
+     setup:{hook:'Huele a azufre y hierbas',conflict:'El precio de Gruk no es oro, es información',stakesFail:'Gruk alerta al gremio',stakesWin:'Antídoto + aliado inesperado',exit:'Gruk susurra: Díganle al alcalde que sé lo de la marca...'},
+     participants:{npcIds:['npc-001'],creatureIds:[]},lairActions:[],
+     objectives:{session:'',scene:['Conseguir el antídoto','No revelar que saben de la Marca'],personal:{p1:'',p2:'',p3:'',p4:''}},
+     loot:[{lootId:'loot-003',condition:'Si triunfan'}],notes:'',debrief:null},
+    {id:'scene-004',name:'Las ruinas bajo el molino',type:'combat',status:'ready',sporadic:false,
+     setup:{hook:'Ruidos bajo la tierra por la noche',conflict:'Golem de Runas custodia la entrada',stakesFail:'No pueden entrar al templo',stakesWin:'Descubren la entrada + Daga del Silencio',exit:'La puerta del templo se abre...'},
+     participants:{npcIds:[],creatureIds:[{creatureId:'crea-003',qty:1},{creatureId:'crea-002',qty:3}]},
+     lairActions:['Runas en el suelo brillan','El techo cruje'],
+     objectives:{session:'Descubrir qué hay bajo el molino',scene:['Derrotar al Golem','Encontrar la entrada'],personal:{p1:'',p2:'',p3:'Analizar las runas del Golem',p4:'Encontrar el cofre oculto'}},
+     loot:[{lootId:'loot-001',condition:'Cofre tras el altar'}],notes:'',debrief:null}
+  ]);
+
+  console.log('✅ Database seeded');
+}
+
+/* ── EXPORT / IMPORT ── */
+function exportDB(table){
+  var data = dbLoad(table);
+  if(!data){ alert('No hay datos para '+table); return; }
+  var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'epicquest_'+table+'.json';
+  a.click();
+}
+
+function exportAll(){
+  var all = {};
+  DB_TABLES.forEach(function(t){ all[t] = dbLoad(t); });
+  var blob = new Blob([JSON.stringify(all, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'epicquest_backup_'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();
+}
+
+function importDB(input){
+  var file = input.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+      var status = document.getElementById('import-status');
+      // Check if it's a full backup (has multiple tables)
+      if(data.campaign || data.npcs || data.scenes){
+        var imported = [];
+        DB_TABLES.forEach(function(t){
+          if(data[t]){ dbSave(t, data[t]); imported.push(t); }
+        });
+        status.textContent = '✅ Importado: ' + imported.join(', ');
+        status.style.color = 'var(--green)';
+      }
+      // Or a single table (array)
+      else if(Array.isArray(data)){
+        var name = file.name.replace('epicquest_','').replace('.json','');
+        if(DB_TABLES.includes(name)){
+          dbSave(name, data);
+          status.textContent = '✅ Importado: ' + name + ' (' + data.length + ' items)';
+          status.style.color = 'var(--green)';
+        } else {
+          status.textContent = '⚠ No se pudo determinar la tabla. Nombre del archivo debe ser epicquest_[tabla].json';
+          status.style.color = 'var(--orange)';
+        }
+      }
+    } catch(err){
+      document.getElementById('import-status').textContent = '❌ Error: ' + err.message;
+      document.getElementById('import-status').style.color = 'var(--red)';
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function resetAllData(){
+  DB_TABLES.forEach(function(t){ localStorage.removeItem(dbKey(t)); });
+  seedDatabase();
+  location.reload();
+}
+
+/* ── SETTINGS RENDER ── */
+function renderSettings(){
+  var info = document.getElementById('gamedata-info');
+  if(!info) return;
+  var lines = [];
+  if(typeof GAMEDATA !== 'undefined'){
+    lines.push('Clases: ' + GAMEDATA.classes.length + ' (' + GAMEDATA.classes.reduce(function(a,c){return a+c.subclasses.length},0) + ' subclases)');
+    lines.push('Facciones: ' + GAMEDATA.factions.length);
+    lines.push('Kits: ' + GAMEDATA.kits.length);
+    lines.push('Condiciones: ' + GAMEDATA.conditions.length);
+    lines.push('Planos: ' + GAMEDATA.planes.length);
+  } else {
+    lines.push('⚠ gamedata.js no encontrado. Colócalo junto a index.html.');
+  }
+  lines.push('');
+  DB_TABLES.forEach(function(t){
+    var d = dbLoad(t);
+    var count = Array.isArray(d) ? d.length : (d ? 1 : 0);
+    lines.push(t + ': ' + count + (Array.isArray(d) ? ' items' : ''));
+  });
+  info.innerHTML = lines.join('<br>');
+}
+
+/* ── HELPER: get player with resolved class/faction data ── */
+function resolvePlayer(p){
+  var cls = typeof GAMEDATA!=='undefined' ? GAMEDATA.classes.find(function(c){return c.id===p.classId}) : null;
+  var sub = cls ? cls.subclasses.find(function(s){return s.id===p.subclassId}) : null;
+  var kit = typeof GAMEDATA!=='undefined' ? GAMEDATA.kits.find(function(k){return k.id===p.kitId}) : null;
+  var fac = typeof GAMEDATA!=='undefined' ? GAMEDATA.factions.find(function(f){return f.id===p.factionId}) : null;
+  var abilities = [];
+  if(cls) cls.abilities.forEach(function(a){abilities.push(a)});
+  if(sub) sub.abilities.forEach(function(a){abilities.push(a)});
+  if(kit) abilities.push({name:kit.ability.name,type:'Kit',desc:kit.ability.desc,cost:kit.ability.cost});
+  return {
+    id:p.id, name:p.name, initial:p.initial, bg:p.bg, fg:p.fg, echo:p.echo,
+    cls: cls ? cls.nameEs : p.classId,
+    sub: sub ? sub.name : '',
+    kit: kit ? kit.name : '',
+    plano: p.plano,
+    faction: fac ? fac.name : p.factionId,
+    hp: (typeof GAMEDATA!=='undefined' ? GAMEDATA.rules.hpBase : 10) + (kit ? kit.hpBonus : 0),
+    aenRegen: (typeof GAMEDATA!=='undefined' ? GAMEDATA.rules.aenPerTurn : 2) + (kit ? kit.aenBonus : 0),
+    abilities: abilities,
+    backstory: p.backstory || ''
+  };
+}
+
+/* ── INIT ── */
+seedDatabase();
+
+/* STATE */
+var combat = null;
+var expandedUnits = {};
+var dragSrc = null;
+
+// Players loaded from DB and resolved with gamedata
+var players = (dbGetAll('players')||[]).map(resolvePlayer);
+
+// Build encounter from a scene in the DB
+function buildEncounterFromScene(sceneId){
+  var scene = dbGetById('scenes', sceneId);
+  if(!scene) return null;
+  var creatures = [];
+  if(scene.participants && scene.participants.creatureIds){
+    scene.participants.creatureIds.forEach(function(ci){
+      var c = dbGetById('bestiary', ci.creatureId);
+      if(c) creatures.push({id:c.id,name:c.name,qty:ci.qty,hp:c.hp,dmg:c.dmg,diff:c.difficulty,resist:c.resist||'',abilities:c.abilities||[]});
+    });
+  }
+  return {name:scene.name,creatures:creatures,lairActions:scene.lairActions||[]};
+}
+
+// Default sample encounter from DB
+var sampleEncounter = buildEncounterFromScene('scene-001') || {name:'Demo',creatures:[],lairActions:[]};
+
+/* COMBAT ENGINE */
+function startCombat(encounter){
+  var units=[];expandedUnits={};
+  players.forEach(function(p){
+    units.push({id:p.id,name:p.name,type:'player',initial:p.initial,bg:p.bg,fg:p.fg,cls:p.cls,plano:p.plano,
+      abilities:p.abilities,hp:0,hpMax:0,actions:{mov:false,act1:false,act2:false},conditions:[]});
+  });
+  encounter.creatures.forEach(function(c){
+    for(var i=1;i<=c.qty;i++){
+      units.push({id:c.id+'-'+i,name:c.name+(c.qty>1?' #'+i:''),type:'creature',hp:c.hp,hpMax:c.hp,dmg:c.dmg,
+        abilities:c.abilities,resist:c.resist||'',diff:c.diff,actions:{mov:false,act1:false,act2:false},conditions:[]});
+    }
+  });
+  combat={name:encounter.name,round:1,turnIndex:0,units:units,
+    order:units.map(function(u){return u.id}),
+    lairActions:encounter.lairActions.map(function(la,i){return{id:'la'+i,text:la,used:false}}),log:[]};
+  switchView('session');renderSession();
+}
+function endCombat(){combat=null;expandedUnits={};renderSession()}
+function nextTurn(){
+  if(!combat)return;
+  combat.turnIndex=(combat.turnIndex+1)%combat.order.length;
+  if(combat.turnIndex===0){
+    combat.round++;
+    combat.units.forEach(function(u){u.actions={mov:false,act1:false,act2:false}});
+    combat.lairActions.forEach(function(la){la.used=false});
+  }
+  var nid=combat.order[combat.turnIndex];
+  var nx=combat.units.find(function(u){return u.id===nid});
+  if(nx)nx.actions={mov:false,act1:false,act2:false};
+  renderSession();
+}
+function adjustHp(uid,delta){
+  var u=combat.units.find(function(u){return u.id===uid});
+  if(u)u.hp=Math.max(0,Math.min(u.hpMax,u.hp+delta));
+  renderSession();
+}
+function toggleAction(uid,act){
+  var u=combat.units.find(function(u){return u.id===uid});if(!u)return;
+  u.actions[act]=!u.actions[act];
+  if(u.actions.mov&&u.actions.act1&&u.actions.act2){setTimeout(function(){nextTurn()},400)}
+  else renderSession();
+}
+function toggleExpand(uid){expandedUnits[uid]=!expandedUnits[uid];renderSession()}
+function useLairAction(lid){var la=combat.lairActions.find(function(l){return l.id===lid});if(la)la.used=true;renderSession()}
+function addEcho(pid){var p=players.find(function(p){return p.id===pid});if(p&&p.echo<5)p.echo++;renderSession()}
+function getHpColor(pct){if(pct>60)return'var(--green)';if(pct>25)return'var(--orange)';return'var(--red)'}
+
+/* DRAG & DROP for initiative */
+function initDrag(){
+  var bar=document.getElementById('init-bar');if(!bar)return;
+  bar.addEventListener('dragstart',function(e){
+    var c=e.target.closest('[data-iid]');if(!c)return;
+    dragSrc=c.getAttribute('data-iid');c.style.opacity='0.4';e.dataTransfer.effectAllowed='move';
+  });
+  bar.addEventListener('dragover',function(e){e.preventDefault();
+    var c=e.target.closest('[data-iid]');if(c)c.style.borderColor='var(--green)';
+  });
+  bar.addEventListener('dragleave',function(e){
+    var c=e.target.closest('[data-iid]');if(c)c.style.borderColor='';
+  });
+  bar.addEventListener('drop',function(e){e.preventDefault();
+    var c=e.target.closest('[data-iid]');if(!c||!dragSrc)return;
+    var tid=c.getAttribute('data-iid');var o=combat.order;
+    var si=o.indexOf(dragSrc),ti=o.indexOf(tid);
+    if(si!==-1&&ti!==-1&&si!==ti){o.splice(si,1);o.splice(ti,0,dragSrc)}
+    dragSrc=null;renderSession();
+  });
+  bar.addEventListener('dragend',function(){dragSrc=null;
+    document.querySelectorAll('[data-iid]').forEach(function(c){c.style.opacity='';c.style.borderColor=''});
+  });
+}
+
+/* RENDER SESSION */
+function renderSession(){
+  var el=document.getElementById('session-content');if(!el)return;
+  if(!combat){
+    el.innerHTML='<div class="no-session"><div style="font-size:48px;opacity:.3">⚡</div><div class="no-session-title">No hay combate activo</div><div class="no-session-desc">Inicia un combate desde una escena en Campaña.</div><button class="btn btn-primary" onclick="startCombat(sampleEncounter)" style="font-size:15px;padding:14px 28px">Iniciar demo: Emboscada en el puente</button></div>';
+    return;
+  }
+  var aid=combat.order[combat.turnIndex];var h='';
+
+  // Top bar
+  h+='<div class="tracker-bar">';
+  h+='<div style="font-size:17px;font-weight:700;font-family:var(--serif);flex:1;min-width:150px">'+combat.name+'</div>';
+  h+='<div class="tracker-stat"><div class="tracker-stat-label">RONDA</div><div class="tracker-stat-value">'+combat.round+'</div></div>';
+  h+='<div class="tracker-stat"><div class="tracker-stat-label">TURNO</div><div class="tracker-stat-value">'+(combat.turnIndex+1)+'/'+combat.order.length+'</div></div>';
+  h+='<button class="btn btn-primary" onclick="nextTurn()" style="font-size:15px;padding:12px 24px">Siguiente turno →</button>';
+  h+='<button class="btn" onclick="endCombat()">Terminar</button></div>';
+
+  // Initiative bar
+  h+='<div class="initiative-bar" id="init-bar">';
+  combat.order.forEach(function(id,idx){
+    var u=combat.units.find(function(x){return x.id===id});
+    var cls='init-chip';
+    if(idx===combat.turnIndex)cls+=' active';
+    if(idx<combat.turnIndex)cls+=' done';
+    if(u.type==='creature'&&u.hp<=0)cls+=' dead';
+    if(u.type==='player')cls+=' player';
+    if(u.type==='player'&&idx>combat.turnIndex&&idx!==combat.turnIndex)cls+=' sinergia-eligible';
+    var lbl=u.type==='player'?u.initial:(u.name.length>10?u.name.substring(0,8)+'..':u.name);
+    h+='<div class="'+cls+'" draggable="true" data-iid="'+id+'" title="'+u.name+'" onclick="toggleExpand(\''+u.id+'\')">'+lbl+'</div>';
+  });
+  h+='</div>';
+
+  // Sinergia
+  var sp=[];combat.order.forEach(function(id,idx){
+    var u=combat.units.find(function(x){return x.id===id});
+    if(u.type==='player'&&idx>combat.turnIndex)sp.push(u.name);
+  });
+  if(sp.length>0)h+='<div style="font-size:13px;color:var(--gold);margin-bottom:12px;padding:8px 14px;background:var(--gold-pale);border-radius:var(--r)">Sinergia disponible: <strong>'+sp.join(', ')+'</strong></div>';
+
+  // Unit cards
+  combat.order.forEach(function(id,idx){
+    var u=combat.units.find(function(x){return x.id===id});
+    var isAct=idx===combat.turnIndex;
+    var isDead=u.type==='creature'&&u.hp<=0;
+    var isExp=expandedUnits[u.id];
+    var cls='unit-card-tracker';
+    if(isAct)cls+=' active-unit';if(isDead)cls+=' dead-unit';
+    h+='<div class="'+cls+'">';
+
+    // Header
+    h+='<div class="unit-header"><div style="cursor:pointer;flex:1" onclick="toggleExpand(\''+u.id+'\')">';
+    if(u.type==='player'){
+      h+='<div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+u.bg+';color:'+u.fg+'">'+u.initial+'</div>';
+      h+='<div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div><div class="unit-meta">'+u.cls+' · Plano '+u.plano+'</div></div></div>';
+    } else {
+      h+='<div><div class="unit-name">'+u.name+' <span style="font-size:12px;color:var(--ink4)">'+(isExp?'▲':'▼')+'</span></div>';
+      h+='<div class="unit-meta">Daño '+u.dmg+(u.resist?' · Resist: '+u.resist:'')+' <span class="difficulty-tag diff-'+u.diff+'" style="margin-left:8px">'+(u.diff==='easy'?'Fácil':u.diff==='medium'?'Medio':u.diff==='hard'?'Duro':'Jefe')+'</span></div></div>';
+    }
+    h+='</div>';
+    if(u.type==='creature'){
+      h+='<div class="hp-controls">';
+      h+='<input type="number" id="hp-'+u.id+'" placeholder="0" min="1">';
+      h+='<button class="btn btn-damage" onclick="event.stopPropagation();var v=parseInt(document.getElementById(\'hp-'+u.id+'\').value)||0;adjustHp(\''+u.id+'\',-v);document.getElementById(\'hp-'+u.id+'\').value=\'\'">Daño</button>';
+      h+='<button class="btn btn-heal" onclick="event.stopPropagation();var v=parseInt(document.getElementById(\'hp-'+u.id+'\').value)||0;adjustHp(\''+u.id+'\',v);document.getElementById(\'hp-'+u.id+'\').value=\'\'">Sana</button>';
+      h+='</div>';
+    }
+    h+='</div>';
+
+    // HP bar
+    if(u.type==='creature'){
+      var pct=Math.round((u.hp/u.hpMax)*100);
+      h+='<div class="hp-section"><div class="hp-display" style="color:'+getHpColor(pct)+'">'+u.hp+'<span style="font-size:13px;color:var(--ink4)">/'+u.hpMax+'</span></div>';
+      h+='<div class="hp-bar"><div class="hp-fill" style="width:'+pct+'%;background:'+getHpColor(pct)+'"></div></div></div>';
+    }
+
+    // Actions
+    h+='<div class="actions-row">';
+    h+='<label class="action-check"><input type="checkbox" '+(u.actions.mov?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'mov\')"> Mov</label>';
+    h+='<label class="action-check"><input type="checkbox" '+(u.actions.act1?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act1\')"> Acción 1</label>';
+    h+='<label class="action-check"><input type="checkbox" '+(u.actions.act2?'checked':'')+' onchange="toggleAction(\''+u.id+'\',\'act2\')"> Acción 2</label>';
+    h+='</div>';
+
+    // Expanded abilities
+    if(isExp&&u.abilities&&u.abilities.length>0){
+      h+='<div class="abilities-compact"><div class="form-label" style="margin-bottom:6px">HABILIDADES</div>';
+      u.abilities.forEach(function(a){
+        h+='<div class="ability-line"><span class="ability-name">'+a.name+'</span>';
+        h+=' <span style="color:var(--ink4);font-size:11px">['+a.type+']</span>';
+        if(a.cost)h+=' <span style="color:var(--gold);font-size:11px;font-weight:600">'+a.cost+'</span>';
+        h+='<div style="font-size:12px;color:var(--ink3);margin-top:2px">'+a.desc+'</div></div>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+
+  // Lair Actions
+  if(combat.lairActions.length>0){
+    h+='<div class="lair-panel"><div class="form-label" style="color:var(--orange)">LAIR ACTIONS — Ronda '+combat.round+'</div>';
+    combat.lairActions.forEach(function(la){
+      h+='<div class="lair-action-btn'+(la.used?' used':'')+'" onclick="useLairAction(\''+la.id+'\')">';
+      h+='<input type="checkbox" style="width:20px;height:20px;pointer-events:none" '+(la.used?'checked':'')+'> '+la.text+'</div>';
+    });
+    h+='</div>';
+  }
+
+  // Echo Points
+  h+='<div class="echo-panel"><div class="form-label" style="color:var(--gold)">ECHO POINTS</div>';
+  players.forEach(function(p){
+    h+='<div class="echo-row"><div style="display:flex;align-items:center;gap:10px"><div class="sb-player" style="background:'+p.bg+';color:'+p.fg+'">'+p.initial+'</div><div class="echo-player-name">'+p.name+'</div></div>';
+    h+='<div style="display:flex;align-items:center;gap:8px"><div class="echo-count">'+p.echo+'</div><button class="echo-btn" onclick="addEcho(\''+p.id+'\')">+1</button></div></div>';
+  });
+  h+='</div>';
+
+  el.innerHTML=h;
+  initDrag();
+}
+
+/* NAVIGATION */
+var breadcrumbs={campaign:'📜 Campaña › Arco I › <span>Sesión 3</span>',scenes:'🎬 <span>Scene Builder</span>',library:'📖 <span>Biblioteca</span>',players:'👥 <span>Personajes</span>',session:'⚡ <span>Sesión en vivo</span>',settings:'⚙️ <span>Configuración</span>'};
+function switchView(id){
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
+  var t=document.getElementById('view-'+id);if(t)t.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(function(i){i.classList.remove('active')});
+  var items=document.querySelectorAll('.sb-item');
+  var map={campaign:0,scenes:1,library:2,players:3,session:4};
+  if(map[id]!==undefined)items[map[id]].classList.add('active');
+  document.getElementById('breadcrumb').innerHTML=breadcrumbs[id]||'';
+  if(id==='session')renderSession();
+  if(id==='settings')renderSettings();
+}
+function selectBeat(el){document.querySelectorAll('.beat-card').forEach(function(b){b.classList.remove('active')});el.classList.add('active')}
+function selectType(el){
+  document.querySelectorAll('.type-option').forEach(function(t){t.classList.remove('selected')});el.classList.add('selected');
+  var isCombat=el.getAttribute('data-type')==='combat';
+  document.querySelectorAll('.combat-only').forEach(function(s){s.classList.toggle('visible',isCombat)});
+}
+function switchBuilderTab(el,pid){
+  document.querySelectorAll('.builder-tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active');
+  document.querySelectorAll('.builder-panel').forEach(function(p){p.classList.remove('active')});
+  var p=document.getElementById('panel-'+pid);if(p)p.classList.add('active');
+}
+function switchLibCategory(el,cid){
+  document.querySelectorAll('.lib-cat-tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active');
+  document.querySelectorAll('.lib-content').forEach(function(c){c.classList.remove('active')});
+  var t=document.getElementById('lib-'+cid);if(t)t.classList.add('active');
+}
+function openScene(){switchView('scenes')}
+function addSporadicScene(){switchView('scenes')}
+</script>
+</body>
+</html>
