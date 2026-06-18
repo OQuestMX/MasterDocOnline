@@ -486,6 +486,30 @@ textarea.form-input{min-height:70px;line-height:1.5}
 .beat-count{font-size:12px;color:var(--ink3)}
 .beat-arrow{font-size:12px;color:var(--ink4)}
 .beat-body{padding:14px 16px;border-top:1px solid var(--border)}
+
+/* SCENE WIZARD */
+.wizard-steps{display:flex;gap:8px;margin-bottom:16px}
+.wizard-step{flex:1;text-align:center;padding:8px;font-size:13px;font-weight:600;border-radius:var(--r);background:var(--surface2);color:var(--ink4);border:2px solid var(--border)}
+.wizard-step.active{background:var(--gold-pale);color:var(--gold);border-color:var(--gold)}
+.wizard-step.done{background:var(--green);color:#fff;border-color:var(--green)}
+.selected-participant{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px}
+.qty-stepper{display:flex;align-items:center;gap:8px}
+.qty-stepper button{width:32px;height:32px;border-radius:var(--r);border:2px solid var(--border);background:var(--surface);font-size:18px;font-weight:700;cursor:pointer;color:var(--ink)}
+.qty-stepper button:active{background:var(--gold-pale)}
+.qty-stepper span{min-width:24px;text-align:center;font-weight:700}
+.wiz-picker{max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);margin-top:8px}
+.wiz-picker::-webkit-scrollbar{width:6px}
+.wiz-picker::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.wiz-picker-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;min-height:44px}
+.wiz-picker-item:active{background:var(--gold-pale)}
+.wiz-picker-item:last-child{border-bottom:none}
+.wiz-check{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;cursor:pointer}
+.wiz-check input{width:20px;height:20px}
+.base-lock{font-size:12px;opacity:.6}
+.custom-lair-tag{display:inline-block;background:var(--gold-pale);color:var(--gold);padding:4px 10px;border-radius:var(--r);font-size:13px;margin:4px 4px 0 0}
+.difficulty-meter{background:var(--surface2);border:2px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:16px}
+.diff-meter-bar{height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin-top:8px}
+.diff-meter-fill{height:100%;border-radius:5px;transition:width .3s}
 </style>
 </head>
 <body>
@@ -993,6 +1017,17 @@ document.addEventListener('click',function(e){
   if(a==='reset-all'){if(confirm('¿Borrar TODO y reiniciar?')){DB_TABLES.forEach(function(x){localStorage.removeItem(dbKey(x))});localStorage.removeItem(dbKey('_init'));location.reload()}}
   if(a==='add-to-combat'){openAddUnitModal()}
   if(a==='close-builder'){selectedSceneId=null;nav('campaign')}
+  if(a==='wizard-next'){saveWizardStep1();sceneWizard.step=2;renderSceneWizard()}
+  if(a==='wizard-back'){saveWizardStep1();sceneWizard.step=1;renderSceneWizard()}
+  if(a==='wizard-cancel'){sceneWizard=null;closeModal()}
+  if(a==='wizard-save'){saveSceneWizard()}
+  if(a==='wz-add-creature'){var cid=el.dataset.cid;var ex=sceneWizard.creatureIds.find(function(c){return c.creatureId===cid});if(ex)ex.qty++;else sceneWizard.creatureIds.push({creatureId:cid,qty:1});renderSceneWizard()}
+  if(a==='wz-qty'){var cid=el.dataset.cid;var delta=parseInt(el.dataset.delta);var ci=sceneWizard.creatureIds.find(function(c){return c.creatureId===cid});if(ci){ci.qty+=delta;if(ci.qty<=0)sceneWizard.creatureIds=sceneWizard.creatureIds.filter(function(c){return c.creatureId!==cid})}renderSceneWizard()}
+  if(a==='wz-add-villain'){var vid=el.dataset.id;if(sceneWizard.villainIds.indexOf(vid)===-1)sceneWizard.villainIds.push(vid);else sceneWizard.villainIds=sceneWizard.villainIds.filter(function(x){return x!==vid});renderSceneWizard()}
+  if(a==='wz-remove-villain'){sceneWizard.villainIds=sceneWizard.villainIds.filter(function(x){return x!==el.dataset.id});renderSceneWizard()}
+  if(a==='wz-add-npc'){var nid=el.dataset.id;if(sceneWizard.npcIds.indexOf(nid)===-1)sceneWizard.npcIds.push(nid);else sceneWizard.npcIds=sceneWizard.npcIds.filter(function(x){return x!==nid});renderSceneWizard()}
+  if(a==='wz-remove-npc'){sceneWizard.npcIds=sceneWizard.npcIds.filter(function(x){return x!==el.dataset.id});renderSceneWizard()}
+  if(a==='wz-remove-lair'){sceneWizard.lairActions=sceneWizard.lairActions.filter(function(x){return x!==el.dataset.lair});renderSceneWizard()}
 });
 
 /* NAV — Escenas tab removed */
@@ -1095,7 +1130,9 @@ function exportAll(){var all={};DB_TABLES.forEach(function(t){all[t]=dbLoad(t)})
 function importFile(input){var f=input.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);var imp=[];if(d.campaign!==undefined||d.npcs){DB_TABLES.forEach(function(t){if(d[t]!==undefined){dbSave(t,d[t]);imp.push(t)}});document.getElementById('import-status').innerHTML='✅ '+imp.join(', ')}else if(Array.isArray(d)){var n=f.name.replace('eq_','').replace('.json','');if(DB_TABLES.indexOf(n)>-1){dbSave(n,d);document.getElementById('import-status').innerHTML='✅ '+n}}renderView(currentView)}catch(err){document.getElementById('import-status').innerHTML='❌ '+err.message}input.value=''};r.readAsText(f)}
 
 /* MODALS */
-function openModal(type,id){var realTable=type==='scene'?'scenes':type;var item=id?dbGetById(realTable,id):null;var beatId=event&&event.target&&event.target.closest('[data-beat]')?event.target.closest('[data-beat]').dataset.beat:null;var title=(id?'Editar':'Crear')+' '+{npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item',players:'Jugador',scene:'Escena',campaign:'Campaña'}[type];var h='<div class="modal-overlay"><div class="modal"><div class="modal-title">'+title+'</div>'+getFields(type,item||{})+'<div class="modal-actions"><button class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" data-action="save-modal" data-type="'+type+'" data-id="'+(id||'null')+'" data-beat="'+(beatId||'')+'">Guardar</button></div></div></div>';document.getElementById('modal-root').innerHTML=h}
+function openModal(type,id){
+  if(type==='scene'){var beatId=event&&event.target&&event.target.closest('[data-beat]')?event.target.closest('[data-beat]').dataset.beat:null;openSceneWizard(id,beatId);return}
+  var realTable=type==='scene'?'scenes':type;var item=id?dbGetById(realTable,id):null;var beatId=event&&event.target&&event.target.closest('[data-beat]')?event.target.closest('[data-beat]').dataset.beat:null;var title=(id?'Editar':'Crear')+' '+{npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item',players:'Jugador',scene:'Escena',campaign:'Campaña'}[type];var h='<div class="modal-overlay"><div class="modal"><div class="modal-title">'+title+'</div>'+getFields(type,item||{})+'<div class="modal-actions"><button class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" data-action="save-modal" data-type="'+type+'" data-id="'+(id||'null')+'" data-beat="'+(beatId||'')+'">Guardar</button></div></div></div>';document.getElementById('modal-root').innerHTML=h}
 function closeModal(){document.getElementById('modal-root').innerHTML=''}
 function fld(label,name,val,ph,ta){var h='<div class="form-section"><div class="form-label">'+label+'</div>';if(ta)h+='<textarea class="form-input" id="f-'+name+'" placeholder="'+(ph||'')+'">'+esc(val)+'</textarea>';else h+='<input class="form-input" id="f-'+name+'" type="text" value="'+esc(val)+'" placeholder="'+(ph||'')+'">';return h+'</div>'}
 function sel(label,name,opts,val){var h='<div class="form-section"><div class="form-label">'+label+'</div><select class="form-input" id="f-'+name+'">';opts.forEach(function(o){h+='<option value="'+o.v+'"'+(val===o.v?' selected':'')+'>'+esc(o.l)+'</option>'});return h+'</select></div>'}
@@ -1117,6 +1154,185 @@ if(type==='bestiary')item={name:gv('name'),type:gv('btype'),difficulty:gv('diffi
 if(type==='loot')item={name:gv('name'),type:gv('ltype'),rarity:gv('rarity'),description:gv('description'),effect:gv('effect'),delivered:false};
 if(type==='players'){item={name:gv('name'),initial:gv('initial')||gv('name').charAt(0),img:gv('img'),bg:gv('bg'),fg:gv('fg'),factionId:gv('factionId'),classId:gv('classId'),subclassId:gv('subclassId'),kitId:gv('kitId'),plano:parseInt(gv('plano'))||1,backstory:gv('backstory'),echo:0};if(id){var old=dbGetById('players',id);if(old)item.echo=old.echo}}
 var rt=type==='scene'?'scenes':type;if(id)dbUpdate(rt,id,item);else dbCreate(rt,item);closeModal();renderView(currentView)}
+
+
+/* ══════════════════════════════════════════════
+   SCENE WIZARD — formulario de dos pasos
+   ══════════════════════════════════════════════ */
+var sceneWizard=null;
+
+function openSceneWizard(id,beatId){
+  var existing=id?dbGetById('scenes',id):null;
+  sceneWizard={
+    step:1,
+    id:id||null,
+    beatId:beatId||(existing?null:null),
+    name:existing?existing.name:'',
+    type:existing?existing.type:'narrative',
+    setup:existing?Object.assign({hook:'',conflict:'',stakesFail:'',stakesWin:'',exit:''},existing.setup):{hook:'',conflict:'',stakesFail:'',stakesWin:'',exit:''},
+    notes:existing?existing.notes||'':'',
+    creatureIds:existing&&existing.participants?JSON.parse(JSON.stringify(existing.participants.creatureIds||[])):[],
+    villainIds:existing&&existing.participants?JSON.parse(JSON.stringify(existing.participants.villainIds||[])):[],
+    npcIds:existing&&existing.participants?(existing.participants.npcIds||[]).slice():[],
+    lairActions:existing?(existing.lairActions||[]).slice():[]
+  };
+  renderSceneWizard();
+}
+
+function renderSceneWizard(){
+  var w=sceneWizard;if(!w)return;
+  var h='<div class="modal-overlay"><div class="modal"><div class="modal-title">'+(w.id?'Editar':'Crear')+' escena — Paso '+w.step+' de 2</div>';
+  // Step indicator
+  h+='<div class="wizard-steps"><div class="wizard-step'+(w.step===1?' active':'')+(w.step>1?' done':'')+'">1. Info básica</div><div class="wizard-step'+(w.step===2?' active':'')+'">2. Participantes</div></div>';
+  if(w.step===1)h+=renderWizardStep1();
+  else h+=renderWizardStep2();
+  // Actions
+  h+='<div class="modal-actions">';
+  if(w.step===1){h+='<button class="btn" data-action="wizard-cancel">Cancelar</button><button class="btn btn-primary" data-action="wizard-next">Siguiente →</button>'}
+  else{h+='<button class="btn" data-action="wizard-back">← Anterior</button><button class="btn btn-primary" data-action="wizard-save">Guardar escena</button>'}
+  h+='</div></div></div>';
+  document.getElementById('modal-root').innerHTML=h;
+}
+
+function renderWizardStep1(){
+  var w=sceneWizard;var s=w.setup;
+  var h='';
+  h+='<div class="form-section"><div class="form-label">Nombre</div><input class="form-input" id="wz-name" type="text" value="'+esc(w.name)+'" placeholder="Nombre de la escena"></div>';
+  h+='<div class="form-section"><div class="form-label">Tipo</div><select class="form-input" id="wz-type" onchange="sceneWizard.type=this.value"><option value="narrative"'+(w.type==='narrative'?' selected':'')+'>Narrativa</option><option value="combat"'+(w.type==='combat'?' selected':'')+'>Combate</option></select></div>';
+  h+='<div class="form-section"><div class="form-label">Hook</div><textarea class="form-input" id="wz-hook" placeholder="¿Cómo abre la escena?">'+esc(s.hook)+'</textarea></div>';
+  h+='<div class="form-section"><div class="form-label">Conflicto</div><textarea class="form-input" id="wz-conflict" placeholder="¿Qué hay que resolver?">'+esc(s.conflict)+'</textarea></div>';
+  h+='<div class="form-row"><div class="form-section"><div class="form-label">Si fallan</div><input class="form-input" id="wz-stakesFail" type="text" value="'+esc(s.stakesFail)+'"></div><div class="form-section"><div class="form-label">Si triunfan</div><input class="form-input" id="wz-stakesWin" type="text" value="'+esc(s.stakesWin)+'"></div></div>';
+  h+='<div class="form-section"><div class="form-label">Beat de salida</div><textarea class="form-input" id="wz-exit" placeholder="¿Cómo conecta con lo siguiente?">'+esc(s.exit)+'</textarea></div>';
+  h+='<div class="form-section"><div class="form-label">Notas DM</div><textarea class="form-input" id="wz-notes" placeholder="Música, recordatorios...">'+esc(w.notes)+'</textarea></div>';
+  return h;
+}
+
+function saveWizardStep1(){
+  var w=sceneWizard;
+  w.name=document.getElementById('wz-name').value.trim();
+  w.type=document.getElementById('wz-type').value;
+  w.setup.hook=document.getElementById('wz-hook').value.trim();
+  w.setup.conflict=document.getElementById('wz-conflict').value.trim();
+  w.setup.stakesFail=document.getElementById('wz-stakesFail').value.trim();
+  w.setup.stakesWin=document.getElementById('wz-stakesWin').value.trim();
+  w.setup.exit=document.getElementById('wz-exit').value.trim();
+  w.notes=document.getElementById('wz-notes').value.trim();
+}
+
+/* Combined bestiary: gamedata base (locked) + user localStorage */
+function allCreatures(){
+  var userCreatures=dbGetAll('bestiary');
+  var userIds={};userCreatures.forEach(function(c){userIds[c.id]=true});
+  var baseCreatures=(G&&G.baseBestiary?G.baseBestiary:[]).filter(function(c){return !userIds[c.id]}).map(function(c){var copy=JSON.parse(JSON.stringify(c));copy._base=true;return copy});
+  return userCreatures.concat(baseCreatures);
+}
+
+function renderWizardStep2(){
+  var w=sceneWizard;
+  var h='';
+  if(w.type==='combat'){
+    // Difficulty meter
+    h+=renderDifficultyMeter();
+    // Selected creatures
+    h+='<div class="form-section"><div class="form-label">CRIATURAS EN ESTA ESCENA</div>';
+    if(!w.creatureIds.length&&!w.villainIds.length){h+='<div style="font-size:13px;color:var(--ink4);padding:8px 0">Ninguna seleccionada todavía.</div>'}
+    w.creatureIds.forEach(function(ci){var c=getCreatureById(ci.creatureId);if(!c)return;h+='<div class="selected-participant"><div><span class="creature-name">'+esc(c.name)+'</span> <span class="difficulty-tag diff-'+(c.difficulty||'medium')+'">'+diffLabel(c.difficulty)+'</span><div style="font-size:12px;color:var(--ink3)">HP '+c.hp+' · '+esc(c.dmg||'')+'</div></div><div class="qty-stepper"><button data-action="wz-qty" data-cid="'+ci.creatureId+'" data-delta="-1">−</button><span>'+ci.qty+'</span><button data-action="wz-qty" data-cid="'+ci.creatureId+'" data-delta="1">+</button></div></div>'});
+    w.villainIds.forEach(function(vid){var v=dbGetById('villains',vid);if(!v)return;h+='<div class="selected-participant"><div><span class="creature-name" style="color:var(--red)">'+esc(v.name)+'</span> <span style="font-size:11px;color:var(--red)">VILLANO</span><div style="font-size:12px;color:var(--ink3)">HP '+(v.stats?v.stats.hp:'?')+' · '+esc(v.stats?v.stats.dmg:'')+'</div></div><button class="delete-btn" data-action="wz-remove-villain" data-id="'+vid+'">×</button></div>'});
+    h+='</div>';
+    // Add creature picker
+    h+='<div class="form-section"><div class="form-label">+ AGREGAR DEL BESTIARIO</div><input type="text" class="form-input" placeholder="Buscar criatura..." oninput="filterWizPicker(this.value,\'creatures\')"><div class="wiz-picker" id="wiz-picker-creatures">'+renderWizCreaturePicker('')+'</div></div>';
+    // Add villain picker
+    var villains=dbGetAll('villains');
+    if(villains.length){h+='<div class="form-section"><div class="form-label">+ AGREGAR VILLANO</div><div class="wiz-picker" id="wiz-picker-villains">'+renderWizVillainPicker()+'</div></div>'}
+    // Lair actions
+    h+='<div class="form-section"><div class="form-label">LAIR ACTIONS</div>';
+    var defaults=(G&&G.defaultLairActions)?G.defaultLairActions:[];
+    defaults.forEach(function(la){var checked=w.lairActions.indexOf(la)>-1;h+='<label class="wiz-check"><input type="checkbox" '+(checked?'checked':'')+' onchange="toggleWizLair(\''+esc(la).replace(/'/g,"\\'")+'\')"> '+esc(la)+'</label>'});
+    h+='<input type="text" class="form-input" id="wz-custom-lair" placeholder="Lair action personalizada + Enter" style="margin-top:8px" onkeypress="if(event.key===\'Enter\'){addCustomLair(this.value);this.value=\'\'}">';
+    // Custom lairs already added
+    w.lairActions.filter(function(la){return defaults.indexOf(la)===-1}).forEach(function(la){h+='<div class="custom-lair-tag">'+esc(la)+' <span data-action="wz-remove-lair" data-lair="'+esc(la)+'" style="cursor:pointer;color:var(--red)">×</span></div>'});
+    h+='</div>';
+  } else {
+    // NARRATIVE: NPCs
+    h+='<div class="form-section"><div class="form-label">NPCs EN ESTA ESCENA</div>';
+    if(!w.npcIds.length){h+='<div style="font-size:13px;color:var(--ink4);padding:8px 0">Ninguno seleccionado todavía.</div>'}
+    w.npcIds.forEach(function(nid){var n=dbGetById('npcs',nid);if(!n)return;h+='<div class="selected-participant"><div><span class="creature-name">'+esc(n.name)+'</span><div style="font-size:12px;color:var(--ink3)">'+esc(n.role||'')+'</div>'+(n.voice?'<div style="font-size:12px;color:var(--ink4);font-style:italic">"'+esc(n.voice)+'"</div>':'')+'</div><button class="delete-btn" data-action="wz-remove-npc" data-id="'+nid+'">×</button></div>'});
+    h+='</div>';
+    var npcs=dbGetAll('npcs');
+    if(npcs.length){h+='<div class="form-section"><div class="form-label">+ AGREGAR NPC</div><input type="text" class="form-input" placeholder="Buscar NPC..." oninput="filterWizPicker(this.value,\'npcs\')"><div class="wiz-picker" id="wiz-picker-npcs">'+renderWizNpcPicker('')+'</div></div>'}
+    else{h+='<div style="font-size:13px;color:var(--ink4);padding:8px 0">No tienes NPCs en tu biblioteca. Créalos primero en Biblioteca → NPCs.</div>'}
+  }
+  return h;
+}
+
+function getCreatureById(id){var c=dbGetById('bestiary',id);if(c)return c;if(G&&G.baseBestiary){var b=G.baseBestiary.find(function(x){return x.id===id});if(b)return b}return null}
+
+function renderDifficultyMeter(){
+  var w=sceneWizard;
+  var totalHp=0,count=0;
+  w.creatureIds.forEach(function(ci){var c=getCreatureById(ci.creatureId);if(c){totalHp+=(c.hp||0)*ci.qty;count+=ci.qty}});
+  w.villainIds.forEach(function(vid){var v=dbGetById('villains',vid);if(v){totalHp+=(v.stats?v.stats.hp:0);count++}});
+  var players=dbGetAll('players').length||4;
+  // Reference: each player can handle ~25 HP comfortably
+  var ratio=totalHp/(players*25);
+  var label,color,pct;
+  if(ratio<0.5){label='Paseo';color='var(--green)';pct=20}
+  else if(ratio<1){label='Desafío';color='var(--gold)';pct=50}
+  else if(ratio<1.6){label='Peligroso';color='var(--orange)';pct=75}
+  else{label='Mortal';color='var(--red)';pct=100}
+  if(count===0){label='Sin enemigos';color='var(--ink4)';pct=0}
+  var h='<div class="difficulty-meter"><div class="flex-between"><div class="form-label" style="margin:0">DIFICULTAD ESTIMADA</div><div style="font-size:14px;font-weight:700;color:'+color+'">'+label+'</div></div>';
+  h+='<div class="diff-meter-bar"><div class="diff-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div>';
+  h+='<div style="font-size:12px;color:var(--ink3);margin-top:4px">'+count+' enemigo'+(count!==1?'s':'')+' · '+totalHp+' HP total · '+players+' jugadores</div></div>';
+  return h;
+}
+
+function renderWizCreaturePicker(q){
+  var w=sceneWizard;
+  var creatures=allCreatures();
+  if(q)creatures=creatures.filter(function(c){return c.name.toLowerCase().indexOf(q.toLowerCase())>-1});
+  if(!creatures.length)return'<div style="font-size:13px;color:var(--ink4);padding:8px">No hay criaturas. Créalas en Biblioteca → Bestiario.</div>';
+  var h='';
+  creatures.forEach(function(c){
+    var already=w.creatureIds.find(function(ci){return ci.creatureId===c.id});
+    h+='<div class="wiz-picker-item" data-action="wz-add-creature" data-cid="'+c.id+'"><div><span style="font-weight:600">'+esc(c.name)+'</span>'+(c._base?' <span class="base-lock" title="Del gamedata base">🔒</span>':'')+' <span class="difficulty-tag diff-'+(c.difficulty||'medium')+'">'+diffLabel(c.difficulty)+'</span><div style="font-size:12px;color:var(--ink3)">HP '+c.hp+' · '+esc(c.dmg||'')+'</div></div><span style="color:var(--gold);font-size:18px">'+(already?'✓':'+')+'</span></div>';
+  });
+  return h;
+}
+function renderWizVillainPicker(){
+  var w=sceneWizard;var villains=dbGetAll('villains');var h='';
+  villains.forEach(function(v){var already=w.villainIds.indexOf(v.id)>-1;h+='<div class="wiz-picker-item" data-action="wz-add-villain" data-id="'+v.id+'"><div><span style="font-weight:600;color:var(--red)">'+esc(v.name)+'</span><div style="font-size:12px;color:var(--ink3)">'+esc(v.role||'')+' · HP '+(v.stats?v.stats.hp:'?')+'</div></div><span style="color:var(--gold);font-size:18px">'+(already?'✓':'+')+'</span></div>'});
+  return h;
+}
+function renderWizNpcPicker(q){
+  var w=sceneWizard;var npcs=dbGetAll('npcs');
+  if(q)npcs=npcs.filter(function(n){return n.name.toLowerCase().indexOf(q.toLowerCase())>-1});
+  var h='';
+  npcs.forEach(function(n){var already=w.npcIds.indexOf(n.id)>-1;h+='<div class="wiz-picker-item" data-action="wz-add-npc" data-id="'+n.id+'"><div><span style="font-weight:600">'+esc(n.name)+'</span><div style="font-size:12px;color:var(--ink3)">'+esc(n.role||'')+'</div></div><span style="color:var(--gold);font-size:18px">'+(already?'✓':'+')+'</span></div>'});
+  return h;
+}
+
+function filterWizPicker(q,kind){
+  if(kind==='creatures')document.getElementById('wiz-picker-creatures').innerHTML=renderWizCreaturePicker(q);
+  if(kind==='npcs')document.getElementById('wiz-picker-npcs').innerHTML=renderWizNpcPicker(q);
+}
+function toggleWizLair(la){var w=sceneWizard;var i=w.lairActions.indexOf(la);if(i>-1)w.lairActions.splice(i,1);else w.lairActions.push(la)}
+function addCustomLair(val){val=val.trim();if(!val)return;if(sceneWizard.lairActions.indexOf(val)===-1)sceneWizard.lairActions.push(val);renderSceneWizard()}
+
+function saveSceneWizard(){
+  var w=sceneWizard;
+  if(!w.name){alert('La escena necesita un nombre');return}
+  var item={name:w.name,type:w.type,status:'ready',sporadic:!w.beatId,
+    setup:w.setup,
+    participants:{npcIds:w.npcIds,creatureIds:w.creatureIds,villainIds:w.villainIds},
+    lairActions:w.lairActions,notes:w.notes,debrief:null};
+  // Preserve debrief if editing
+  if(w.id){var existing=dbGetById('scenes',w.id);if(existing&&existing.debrief)item.debrief=existing.debrief;dbUpdate('scenes',w.id,item)}
+  else{item.id='sce-'+uid();dbCreate('scenes',item);if(w.beatId){var camp=dbLoad('campaign');if(camp){camp.arcs[0].beats.forEach(function(b){if(b.id===w.beatId)b.scenes.push(item.id)});dbSave('campaign',camp)}}selectedSceneId=item.id}
+  sceneWizard=null;
+  closeModal();
+  if(w.id||w.beatId)nav('campaign');else{selectedSceneId=item.id;nav('scenes')}
+}
 
 /* INIT */
 nav('campaign');
