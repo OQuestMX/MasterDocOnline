@@ -771,7 +771,7 @@ textarea.form-input{min-height:70px;line-height:1.5}
   </nav>
   <hr class="sb-divider">
   <div class="sb-players" id="sb-players-bar"></div>
-  <div class="sb-settings" data-action="nav" data-type="settings">⚙️ Configuración <span style="font-size:10px;color:var(--ink4);margin-left:4px">v0629-2259</span></div>
+  <div class="sb-settings" data-action="nav" data-type="settings">⚙️ Configuración <span style="font-size:10px;color:var(--ink4);margin-left:4px">v0629-2341</span></div>
 </aside>
 <div class="main">
   <div class="topbar">
@@ -2033,6 +2033,116 @@ function renderInitiative(){
   el.innerHTML=h;
 }
 function updateSquadName(squadId,val){var sq=initSetup.squads.find(function(s){return s.id===squadId});if(sq)sq.name=val}
+
+/* ══════════════════════════════════════════════
+   WIKI / LORE — pages with [[ ]] links (RESTORED)
+   ══════════════════════════════════════════════ */
+function wikiFindByTitle(title){
+  var t=title.trim().toLowerCase();
+  return dbGetAll('wiki').find(function(p){return p.title.trim().toLowerCase()===t})||null;
+}
+function wikiCreatePage(title){
+  var existing=wikiFindByTitle(title);
+  if(existing)return existing;
+  return dbCreate('wiki',{title:title.trim(),content:''});
+}
+function openWikiLink(title){
+  var page=wikiFindByTitle(title);
+  if(!page)page=wikiCreatePage(title);
+  currentWikiId=page.id;
+  wikiEditing=!page.content;
+  nav('wiki');
+}
+function renderLinkedText(text){
+  if(!text)return'';
+  var safe=esc(text);
+  return safe.replace(/\[\[([^\]]+)\]\]/g,function(m,name){
+    var trimmed=name.trim();
+    var exists=wikiFindByTitle(trimmed);
+    var cls=exists?'wikilink':'wikilink wikilink-new';
+    return '<span class="'+cls+'" data-action="wiki-link" data-title="'+esc(trimmed)+'">'+esc(trimmed)+'</span>';
+  });
+}
+function renderLinkedParagraphs(text){
+  if(!text)return'<span style="color:var(--ink4)">Vacío</span>';
+  return renderLinkedText(text).split('\n').map(function(line){return line.trim()?'<p class="wiki-p">'+line+'</p>':'<br>'}).join('');
+}
+function renderWiki(){
+  var el=document.getElementById('wiki-content');if(!el)return;
+  var pages=dbGetAll('wiki');
+  if(currentWikiId){
+    var page=dbGetById('wiki',currentWikiId);
+    if(!page){currentWikiId=null;renderWiki();return}
+    var h='<div class="wiki-layout">';
+    h+='<div class="wiki-sidebar"><button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:10px" data-action="wiki-new">+ Nueva página</button>';
+    h+='<input type="text" class="form-input" placeholder="Buscar..." value="'+esc(wikiSearch)+'" oninput="wikiSearch=this.value;renderWikiList()" style="margin-bottom:8px"><div id="wiki-list">'+renderWikiList(true)+'</div></div>';
+    h+='<div class="wiki-main">';
+    h+='<div class="wiki-page-header"><input type="text" class="wiki-title-input" id="wiki-title" value="'+esc(page.title)+'" oninput="saveWikiTitle(this.value)" placeholder="Título de la página"><div style="display:flex;gap:8px"><button class="btn'+(wikiEditing?' btn-primary':'')+'" data-action="wiki-toggle-edit">'+(wikiEditing?'✓ Leer':'✍️ Editar')+'</button><button class="delete-btn" data-action="wiki-delete" data-id="'+page.id+'">×</button></div></div>';
+    if(wikiEditing){
+      h+='<textarea class="wiki-editor" id="wiki-editor" placeholder="Escribe el lore aquí. Usa [[corchetes dobles]] para enlazar a otras páginas." oninput="saveWikiContent(this.value)">'+esc(page.content||'')+'</textarea>';
+      h+='<div class="wiki-hint">💡 Escribe [[nombre]] para crear o enlazar a otra página.</div>';
+    } else {
+      h+='<div class="wiki-reading">'+renderLinkedParagraphs(page.content)+'</div>';
+      var refs=wikiBacklinks(page.title);
+      if(refs.length){h+='<div class="wiki-backlinks"><div class="form-label">MENCIONADA EN</div>';refs.forEach(function(r){h+='<div class="wiki-backlink" data-action="'+r.action+'" data-id="'+r.id+'"'+(r.title?' data-title="'+esc(r.title)+'"':'')+'>'+r.icon+' '+esc(r.label)+'</div>'});h+='</div>'}
+    }
+    h+='</div></div>';
+    el.innerHTML=h;
+    return;
+  }
+  if(!pages.length){
+    el.innerHTML='<div class="section-label">WIKI / LORE</div><div class="empty-state"><div class="empty-state-title">Tu wiki está vacío</div><div class="empty-state-desc">Crea páginas de lore, conceptos, lugares y personajes. Enlázalas con [[corchetes]] desde escenas o entre sí.</div><button class="btn btn-primary" data-action="wiki-new">+ Crear primera página</button></div>';
+    return;
+  }
+  var h='<div class="section-label">WIKI / LORE</div>';
+  h+='<div style="display:flex;gap:8px;margin-bottom:12px"><input type="text" class="form-input" placeholder="Buscar páginas..." value="'+esc(wikiSearch)+'" oninput="wikiSearch=this.value;renderWiki()" style="flex:1"><button class="btn btn-primary" data-action="wiki-new">+ Nueva</button></div>';
+  var filtered=pages;
+  if(wikiSearch)filtered=pages.filter(function(p){return p.title.toLowerCase().indexOf(wikiSearch.toLowerCase())>-1});
+  h+='<div class="wiki-grid">';
+  filtered.forEach(function(p){
+    var preview=(p.content||'').replace(/\[\[([^\]]+)\]\]/g,'$1').substring(0,100);
+    h+='<div class="wiki-card" data-action="wiki-open" data-id="'+p.id+'"><div class="wiki-card-title">'+esc(p.title)+'</div><div class="wiki-card-preview">'+esc(preview||'Vacía')+'</div></div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+function renderWikiList(returnHtml){
+  var pages=dbGetAll('wiki');
+  if(wikiSearch)pages=pages.filter(function(p){return p.title.toLowerCase().indexOf(wikiSearch.toLowerCase())>-1});
+  var h='';
+  pages.forEach(function(p){
+    h+='<div class="wiki-list-item'+(p.id===currentWikiId?' active':'')+'" data-action="wiki-open" data-id="'+p.id+'">'+esc(p.title)+'</div>';
+  });
+  if(!h)h='<div style="font-size:13px;color:var(--ink4);padding:8px">Sin resultados</div>';
+  if(returnHtml)return h;
+  var el=document.getElementById('wiki-list');if(el)el.innerHTML=h;
+}
+function wikiBacklinks(title){
+  var refs=[];var t=title.trim().toLowerCase();
+  var rx=new RegExp('\\[\\['+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\]\\]','i');
+  dbGetAll('wiki').forEach(function(p){
+    if(p.title.trim().toLowerCase()===t)return;
+    if(rx.test(p.content||''))refs.push({action:'wiki-open',id:p.id,icon:'📄',label:p.title});
+  });
+  dbGetAll('scenes').forEach(function(s){
+    var text=(s.narrative||'')+' '+(s.notes||'')+' '+((s.setup&&s.setup.hook)||'');
+    if(rx.test(text))refs.push({action:'open-scene-from-wiki',id:s.id,icon:'🎬',label:s.name});
+  });
+  return refs;
+}
+function saveWikiTitle(val){if(!currentWikiId)return;dbUpdate('wiki',currentWikiId,{title:val});var li=document.getElementById('wiki-list');if(li)renderWikiList()}
+function saveWikiContent(val){if(!currentWikiId)return;dbUpdate('wiki',currentWikiId,{content:val})}
+function renderNarrativeLinks(text){
+  if(!text)return'';
+  var matches=[];var rx=/\[\[([^\]]+)\]\]/g,m;
+  while((m=rx.exec(text))!==null){if(matches.indexOf(m[1].trim())===-1)matches.push(m[1].trim())}
+  if(!matches.length)return'';
+  var h='<div class="form-label" style="margin-top:8px">ENLACES EN ESTE TEXTO</div><div class="writer-links-row">';
+  matches.forEach(function(name){var exists=wikiFindByTitle(name);h+='<span class="wikilink'+(exists?'':' wikilink-new')+'" data-action="wiki-link" data-title="'+esc(name)+'">'+esc(name)+'</span>'});
+  h+='</div>';
+  return h;
+}
+function refreshNarrativeLinks(){var s=dbGetById('scenes',writerSceneId);if(!s)return;var el=document.getElementById('writer-links');if(el){var ta=document.querySelector('.writer-big');if(ta)el.innerHTML=renderNarrativeLinks(ta.value)}}
 
 function renderSettings(){var el=document.getElementById('settings-content');if(!el)return;var h='<div class="section-label">CONFIGURACIÓN</div><div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">GAME DATA</div><div style="font-size:14px;color:var(--ink2);line-height:1.8">';if(G)h+='Clases: '+G.classes.length+' ('+G.classes.reduce(function(a,c){return a+c.subclasses.length},0)+' subclases)<br>Facciones: '+G.factions.length+'<br>Kits: '+G.kits.length+'<br>Bestiario base: '+(G.baseBestiary?G.baseBestiary.length:0);else h+='⚠ gamedata no cargado';h+='<br><br>';DB_TABLES.forEach(function(t){var d=dbLoad(t);h+=t+': '+(Array.isArray(d)?d.length:(d?1:0))+'<br>'});h+='</div></div>';h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">EXPORTAR</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">';DB_TABLES.forEach(function(t){h+='<button class="btn" data-action="export-db" data-type="'+t+'">'+t+'</button>'});h+='<button class="btn btn-primary" data-action="export-all">Todo</button></div></div>';h+='<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px"><div class="form-label">IMPORTAR</div><input type="file" accept=".json" style="font-size:14px;margin-top:8px" onchange="importFile(this)"><div id="import-status" style="margin-top:8px;font-size:13px"></div></div>';h+='<div style="background:var(--surface);border:2px solid var(--red);border-radius:var(--r-lg);padding:18px"><div class="form-label" style="color:var(--red)">ZONA DE PELIGRO</div><button class="btn" style="border-color:var(--red);color:var(--red);margin-top:8px" data-action="reset-all">Resetear todos los datos</button></div>';el.innerHTML=h}
 function exportDB(t){var d=dbLoad(t);if(!d){alert('Sin datos');return}var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='eq_'+t+'.json';a.click()}
