@@ -737,6 +737,25 @@ textarea.form-input{min-height:70px;line-height:1.5}
 .band-b12 .band-tag{background:var(--gold)}
 .band-b12{color:var(--ink2);font-weight:600}
 .echo-flag{color:var(--gold);font-size:10px;font-weight:700}
+
+/* MULTI-SELECT FILTER CHIPS */
+.filter-bar-multi{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r)}
+.filter-chip-group{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap}
+.filter-chip-group .filter-cat-label{font-size:12px;font-weight:700;color:var(--ink3);min-width:72px;padding-top:6px}
+.filter-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1}
+.fchip{font-size:12px;padding:5px 11px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--ink2);min-height:30px;display:inline-flex;align-items:center}
+.fchip:active{transform:scale(.96)}
+.fchip.on{background:var(--gold);color:#fff;border-color:var(--gold);font-weight:600}
+.active-tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:8px;border-top:1px dashed var(--border)}
+.active-tags-label{font-size:11px;font-weight:700;color:var(--ink4)}
+.active-tag{font-size:12px;padding:4px 10px;border-radius:12px;background:var(--gold-pale);color:var(--gold);border:1px solid var(--gold);cursor:pointer;font-weight:600}
+.active-tag:active{opacity:.7}
+.clear-all-tags{font-size:12px;color:var(--red);cursor:pointer;font-weight:600;margin-left:4px}
+.sort-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.sort-label{font-size:12px;font-weight:700;color:var(--ink3)}
+.sort-opt{font-size:12px;padding:5px 11px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--ink2);min-height:30px;display:inline-flex;align-items:center}
+.sort-opt.on{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:600}
+.bestiary-count{font-size:12px;color:var(--ink3);margin-bottom:8px;font-weight:600}
 </style>
 </head>
 <body>
@@ -752,7 +771,7 @@ textarea.form-input{min-height:70px;line-height:1.5}
   </nav>
   <hr class="sb-divider">
   <div class="sb-players" id="sb-players-bar"></div>
-  <div class="sb-settings" data-action="nav" data-type="settings">⚙️ Configuración <span style="font-size:10px;color:var(--ink4);margin-left:4px">v0629-1719</span></div>
+  <div class="sb-settings" data-action="nav" data-type="settings">⚙️ Configuración <span style="font-size:10px;color:var(--ink4);margin-left:4px">v0629-2259</span></div>
 </aside>
 <div class="main">
   <div class="topbar">
@@ -1248,9 +1267,11 @@ var campaignMode='macro',selectedArcIdx=0;
 var writerSceneId=null;var writerSections={hook:true,conflict:true,stakes:true,exit:true,notes:true,narrative:true};
 var currentWikiId=null;var wikiEditing=false;var wikiSearch='';
 var combat=null,expandedUnits={};
-var bestiaryFilters={difficulty:[],type:[],terrain:[]};
+var bestiaryFilters={difficulty:[],type:[],role:[],hp:[]};
+var bestiarySort={by:'name',dir:'asc'};
+var bestiarySearch='';
 var editAbilities=[];var editMoves=[];
-var wizFilters={difficulty:[],type:[],terrain:[]};
+var wizFilters={difficulty:[],type:[],role:[],hp:[]};
 var G=(typeof GAMEDATA!=='undefined')?GAMEDATA:null;
 
 /* HELPERS */
@@ -1480,42 +1501,95 @@ function delBeat(arcIdx,idx){var camp=dbLoad('campaign');if(!camp)return;if(!con
 
 /* LIBRARY */
 function allTerrains(){var set={};allCreatures().forEach(function(c){(c.terrain||[]).forEach(function(t){set[t]=true})});return Object.keys(set).sort()}
-function applyFilters(creatures,filters){return creatures.filter(function(c){
-  if(filters.difficulty&&c.difficulty!==filters.difficulty)return false;
-  if(filters.type&&c.type!==filters.type)return false;
-  if(filters.role&&c.role!==filters.role)return false;
-  if(filters.terrain){var has=(c.terrain||[]).indexOf(filters.terrain)>-1;if(!has)return false}
+function hpBand(hp){if(hp<=10)return'low';if(hp<=25)return'mid';if(hp<=50)return'high';return'boss'}
+function applyFilters(creatures,filters,search){return creatures.filter(function(c){
+  if(filters.difficulty&&filters.difficulty.length&&filters.difficulty.indexOf(c.difficulty)===-1)return false;
+  if(filters.type&&filters.type.length&&filters.type.indexOf(c.type)===-1)return false;
+  if(filters.role&&filters.role.length&&filters.role.indexOf(c.role)===-1)return false;
+  if(filters.hp&&filters.hp.length&&filters.hp.indexOf(hpBand(c.hp))===-1)return false;
+  if(search){var q=search.toLowerCase();var inName=(c.name||'').toLowerCase().indexOf(q)>-1;var inDesc=(c.description||'').toLowerCase().indexOf(q)>-1;var inAb=(c.abilities||[]).some(function(a){return (a.name||'').toLowerCase().indexOf(q)>-1||(a.desc||'').toLowerCase().indexOf(q)>-1});if(!inName&&!inDesc&&!inAb)return false}
   return true;
 })}
-function setFilter(scope,cat,val){var f=scope==='lib'?bestiaryFilters:wizFilters;f[cat]=val;if(scope==='lib')renderLibrary();else renderSceneWizard()}
-function clearFilters(scope){var f=scope==='lib'?bestiaryFilters:wizFilters;f.difficulty='';f.type='';f.terrain='';f.role='';if(scope==='lib')renderLibrary();else renderSceneWizard()}
+function sortCreatures(creatures,sort){
+  var diffOrder={easy:1,medium:2,hard:3,boss:4};
+  var roleOrder={Minion:1,Skirmisher:2,Bruiser:3,Caster:4,Controller:5,Tank:6};
+  var arr=creatures.slice();
+  arr.sort(function(a,b){
+    var va,vb;
+    if(sort.by==='name'){va=(a.name||'').toLowerCase();vb=(b.name||'').toLowerCase()}
+    else if(sort.by==='difficulty'){va=diffOrder[a.difficulty]||0;vb=diffOrder[b.difficulty]||0}
+    else if(sort.by==='hp'){va=a.hp||0;vb=b.hp||0}
+    else if(sort.by==='role'){va=roleOrder[a.role]||0;vb=roleOrder[b.role]||0}
+    else if(sort.by==='type'){va=(a.type||'').toLowerCase();vb=(b.type||'').toLowerCase()}
+    else{va=0;vb=0}
+    if(va<vb)return sort.dir==='asc'?-1:1;
+    if(va>vb)return sort.dir==='asc'?1:-1;
+    return 0;
+  });
+  return arr;
+}
+function toggleFilterChip(scope,cat,val){var f=scope==='lib'?bestiaryFilters:wizFilters;var i=f[cat].indexOf(val);if(i>-1)f[cat].splice(i,1);else f[cat].push(val);if(scope==='lib')renderLibrary();else renderSceneWizard()}
+function setSort(by){if(bestiarySort.by===by){bestiarySort.dir=bestiarySort.dir==='asc'?'desc':'asc'}else{bestiarySort.by=by;bestiarySort.dir='asc'}renderLibrary()}
+function setBestiarySearch(v){bestiarySearch=v;var el=document.getElementById('lib-items');if(el){var list=applyFilters(allCreatures(),bestiaryFilters,bestiarySearch);list=sortCreatures(list,bestiarySort);el.innerHTML=renderLibList(list);var cnt=document.getElementById('bestiary-count');if(cnt)cnt.textContent='Mostrando '+list.length+' de '+allCreatures().length+' criaturas'}}
+function clearFilters(scope){var f=scope==='lib'?bestiaryFilters:wizFilters;f.difficulty=[];f.type=[];f.role=[];f.hp=[];if(scope==='lib'){bestiarySearch='';renderLibrary()}else renderSceneWizard()}
+function removeFilterTag(scope,cat,val){var f=scope==='lib'?bestiaryFilters:wizFilters;var i=f[cat].indexOf(val);if(i>-1)f[cat].splice(i,1);if(scope==='lib')renderLibrary();else renderSceneWizard()}
 function renderFilterBar(scope){
   var f=scope==='lib'?bestiaryFilters:wizFilters;
   var diffs=G?G.difficulties:[];
   var types=G?G.creatureTypes:[];
   var roles=G?G.combatRoles:[];
-  var terrains=allTerrains();
-  function dd(cat,label,opts){
-    var h='<select class="filter-dd" onchange="setFilter(\''+scope+'\',\''+cat+'\',this.value)"><option value="">'+label+'</option>';
-    opts.forEach(function(o){h+='<option value="'+esc(o.v)+'"'+(f[cat]===o.v?' selected':'')+'>'+esc(o.l)+'</option>'});
-    return h+'</select>';
+  function chipGroup(cat,label,opts){
+    var h='<div class="filter-chip-group"><span class="filter-cat-label">'+label+'</span><div class="filter-chips">';
+    opts.forEach(function(o){var on=f[cat].indexOf(o.v)>-1;h+='<span class="fchip'+(on?' on':'')+'" onclick="toggleFilterChip(\''+scope+'\',\''+cat+'\',\''+esc(o.v).replace(/'/g,"")+'\')">'+esc(o.l)+'</span>'});
+    h+='</div></div>';
+    return h;
   }
-  var active=(f.difficulty?1:0)+(f.type?1:0)+(f.terrain?1:0)+(f.role?1:0);
-  var h='<div class="filter-bar-dd">';
-  h+=dd('difficulty','Dificultad ▾',diffs.map(function(d){return{v:d.id,l:d.name}}));
-  h+=dd('role','Rol ▾',roles.map(function(r){return{v:r.id,l:r.name}}));
-  h+=dd('type','Tipo ▾',types.map(function(t){return{v:t,l:t}}));
-  h+=dd('terrain','Terreno ▾',terrains.map(function(t){return{v:t,l:t}}));
-  if(active)h+='<span class="filter-clear" onclick="clearFilters(\''+scope+'\')">Limpiar ('+active+')</span>';
+  var hpBands=[{v:'low',l:'≤10'},{v:'mid',l:'11-25'},{v:'high',l:'26-50'},{v:'boss',l:'50+'}];
+  var totalActive=f.difficulty.length+f.type.length+f.role.length+f.hp.length;
+  var h='<div class="filter-bar-multi">';
+  h+=chipGroup('difficulty','Dificultad',diffs.map(function(d){return{v:d.id,l:d.name}}));
+  h+=chipGroup('role','Rol',roles.map(function(r){return{v:r.id,l:r.name}}));
+  h+=chipGroup('type','Tipo',types.map(function(t){return{v:t,l:t}}));
+  h+=chipGroup('hp','HP',hpBands);
+  // Active tags row (removable)
+  if(totalActive>0){
+    h+='<div class="active-tags"><span class="active-tags-label">Activos:</span>';
+    var hpLabels={low:'HP ≤10',mid:'HP 11-25',high:'HP 26-50',boss:'HP 50+'};
+    ['difficulty','role','type','hp'].forEach(function(cat){
+      f[cat].forEach(function(v){
+        var label=v;
+        if(cat==='difficulty'){var d=diffs.find(function(x){return x.id===v});if(d)label=d.name}
+        if(cat==='role'){var r=roles.find(function(x){return x.id===v});if(r)label=r.name}
+        if(cat==='hp'){label=hpLabels[v]||v}
+        h+='<span class="active-tag" onclick="removeFilterTag(\''+scope+'\',\''+cat+'\',\''+esc(v).replace(/'/g,"")+'\')">'+esc(label)+' ×</span>';
+      });
+    });
+    h+='<span class="clear-all-tags" onclick="clearFilters(\''+scope+'\')">Limpiar todo</span></div>';
+  }
+  h+='</div>';
+  return h;
+}
+function renderSortBar(){
+  var opts=[['name','Nombre'],['difficulty','Dificultad'],['hp','HP'],['role','Rol'],['type','Tipo']];
+  var h='<div class="sort-bar"><span class="sort-label">Ordenar:</span>';
+  opts.forEach(function(o){var on=bestiarySort.by===o[0];h+='<span class="sort-opt'+(on?' on':'')+'" onclick="setSort(\''+o[0]+'\')">'+o[1]+(on?(bestiarySort.dir==='asc'?' ↑':' ↓'):'')+'</span>'});
   h+='</div>';
   return h;
 }
 function libItems(tab){if(tab==='bestiary')return allCreatures();return dbGetAll(tab)}
 function libCount(tab){return libItems(tab).length}
-function renderLibrary(){var el=document.getElementById('library-content');if(!el)return;var tabs=[{id:'npcs',l:'NPCs'},{id:'villains',l:'Villanos'},{id:'bestiary',l:'Bestiario'},{id:'loot',l:'Loot'}];var h='<div class="section-label">BIBLIOTECA</div><div class="lib-category-tabs">';tabs.forEach(function(t){h+='<div class="lib-cat-tab'+(selectedLibTab===t.id?' active':'')+'" onclick="selectedLibTab=\''+t.id+'\';selectedLibItem=null;renderLibrary()">'+t.l+' <span class="tab-count">'+libCount(t.id)+'</span></div>'});h+='</div>';var tl={npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item'}[selectedLibTab];h+='<div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="'+selectedLibTab+'">+ Nuevo '+tl+'</button></div>';h+=(selectedLibTab==='bestiary'?renderFilterBar('lib'):'');h+='<div class="library-layout"><div class="library-list"><div class="library-search"><input type="text" placeholder="Buscar..." oninput="filterLib(this.value)"></div><div id="lib-items">';var libList=libItems(selectedLibTab);if(selectedLibTab==='bestiary')libList=applyFilters(libList,bestiaryFilters);h+=renderLibList(libList);h+='</div></div><div class="library-detail" id="lib-detail">';h+=selectedLibItem?renderLibDetail(selectedLibTab,selectedLibItem):'<div class="empty-state"><div class="empty-state-desc">Selecciona un item</div></div>';h+='</div></div>';el.innerHTML=h}
+function renderLibrary(){var el=document.getElementById('library-content');if(!el)return;var tabs=[{id:'npcs',l:'NPCs'},{id:'villains',l:'Villanos'},{id:'bestiary',l:'Bestiario'},{id:'loot',l:'Loot'}];var h='<div class="section-label">BIBLIOTECA</div><div class="lib-category-tabs">';tabs.forEach(function(t){h+='<div class="lib-cat-tab'+(selectedLibTab===t.id?' active':'')+'" onclick="selectedLibTab=\''+t.id+'\';selectedLibItem=null;renderLibrary()">'+t.l+' <span class="tab-count">'+libCount(t.id)+'</span></div>'});h+='</div>';var tl={npcs:'NPC',villains:'Villano',bestiary:'Criatura',loot:'Item'}[selectedLibTab];h+='<div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="'+selectedLibTab+'">+ Nuevo '+tl+'</button></div>';h+=(selectedLibTab==='bestiary'?renderFilterBar('lib'):'');h+=(selectedLibTab==='bestiary'?renderSortBar():'');
+  var libList=libItems(selectedLibTab);
+  if(selectedLibTab==='bestiary'){libList=applyFilters(libList,bestiaryFilters,bestiarySearch);libList=sortCreatures(libList,bestiarySort)}
+  var totalCreatures=selectedLibTab==='bestiary'?allCreatures().length:libList.length;
+  h+='<div class="library-layout"><div class="library-list">';
+  h+='<div class="library-search"><input type="text" placeholder="Buscar nombre, habilidad, descripción..." value="'+esc(selectedLibTab==='bestiary'?bestiarySearch:'')+'" oninput="'+(selectedLibTab==='bestiary'?'setBestiarySearch(this.value)':'filterLib(this.value)')+'"></div>';
+  if(selectedLibTab==='bestiary')h+='<div class="bestiary-count" id="bestiary-count">Mostrando '+libList.length+' de '+totalCreatures+' criaturas</div>';
+  h+='<div id="lib-items">';
+  h+=renderLibList(libList);h+='</div></div><div class="library-detail" id="lib-detail">';h+=selectedLibItem?renderLibDetail(selectedLibTab,selectedLibItem):'<div class="empty-state"><div class="empty-state-desc">Selecciona un item</div></div>';h+='</div></div>';el.innerHTML=h}
 function renderLibList(items){if(!items.length)return'<div class="empty-state"><div class="empty-state-desc">Vacío. Crea el primero.</div></div>';var h='';items.forEach(function(item){h+='<div class="entity-list-item'+(selectedLibItem===item.id?' selected':'')+'" data-action="select-lib" data-id="'+item.id+'"><div><div style="font-size:14px;font-weight:600">'+esc(item.name)+(item._base?' <span class="base-lock" title="Del gamedata base">🔒</span>':'')+(item.role?' '+roleBadge(item.role):'')+'</div>';if(item.role)h+='<div style="font-size:12px;color:var(--ink3)">'+esc(item.role)+'</div>';if(item.type)h+='<div style="font-size:12px;color:var(--ink3)">'+esc(item.type)+(item.difficulty?' · '+diffLabel(item.difficulty):'')+'</div>';h+='</div>'+(item._base?'<span class="base-tag">base</span>':'<button class="delete-btn" data-action="delete-item" data-type="'+selectedLibTab+'" data-id="'+item.id+'" title="Eliminar">×</button>')+'</div>'});return h}
 function renderLibDetail(table,id){var item=table==='bestiary'?getCreatureById(id):dbGetById(table,id);if(!item)return'';var h='<div style="display:flex;justify-content:space-between;align-items:start"><div class="detail-header"><div class="detail-name">'+esc(item.name)+'</div>';if(item.role)h+='<div class="detail-role">'+esc(item.role)+'</div>';if(item.type&&table==='bestiary')h+='<div class="detail-role">'+esc(item.type)+' · <span class="difficulty-tag diff-'+(item.difficulty||'medium')+'">'+diffLabel(item.difficulty)+'</span>'+(item.role?' '+roleBadge(item.role):'')+'</div>';h+='</div>'+(item._base?'<button class="btn" data-action="clone-creature" data-id="'+item.id+'">Clonar para editar</button>':'<button class="btn" data-action="open-modal" data-type="'+table+'" data-id="'+item.id+'">Editar</button>')+'</div>';var fields=[];if(table==='npcs')fields=[['MOTIVACIÓN','motivation'],['LO QUE SABE','knows'],['LO QUE QUIERE','wants']];if(table==='villains'){fields=[['MOTIVACIÓN','motivation'],['ARCO','arc']];if(item.stats)h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+(item.stats.hp||0)+'</span><span class="creature-stat dmg">'+esc(item.stats.dmg||'?')+'</span>'+(item.stats.special?'<span class="creature-stat special">'+esc(item.stats.special)+'</span>':'')+'</div></div>'}if(table==='bestiary'){fields=[['DESCRIPCIÓN','description']];h+='<div class="detail-section"><div class="detail-section-label">STATS</div><div class="creature-stats-row"><span class="creature-stat hp">HP '+(item.hp||0)+'</span><span class="creature-stat dmg">'+esc(item.dmg||'?')+'</span>'+(item.resist?'<span class="creature-stat">Resist: '+esc(item.resist)+'</span>':'')+'</div></div>';if(item.terrain&&item.terrain.length)h+='<div class="detail-section"><div class="detail-section-label">TERRENO</div><div style="font-size:14px;color:var(--ink2)">'+item.terrain.map(esc).join(' · ')+'</div></div>'}if(table==='loot')fields=[['DESCRIPCIÓN','description'],['EFECTO','effect']];fields.forEach(function(f){if(item[f[1]])h+='<div class="detail-section"><div class="detail-section-label">'+f[0]+'</div><div class="detail-section-value">'+esc(item[f[1]])+'</div></div>'});if(item.voice)h+='<div class="detail-voice">"'+esc(item.voice)+'"</div>';if(item.abilities&&item.abilities.length){h+='<div class="detail-section"><div class="detail-section-label">HABILIDADES</div>';item.abilities.forEach(function(a){h+='<div class="ability-line"><span class="ability-name">'+esc(a.name)+'</span> <span style="color:var(--ink4)">['+esc(a.type)+']</span><div style="font-size:13px;color:var(--ink3)">'+esc(a.desc)+'</div></div>'});h+='</div>'}if(item.moves&&item.moves.length){h+='<div class="detail-section"><div class="detail-section-label">MOVES ENTRE SESIONES</div>';item.moves.forEach(function(m){h+='<div class="move-item"><input type="checkbox" '+(m.done?'checked':'')+' data-action="toggle-move" data-villain-id="'+item.id+'" data-move-text="'+esc(m.text)+'"><span class="'+(m.done?'move-done':'')+'">'+esc(m.text)+'</span></div>'});h+='</div>'}return h}
-function filterLib(q){var items=libItems(selectedLibTab);if(selectedLibTab==='bestiary')items=applyFilters(items,bestiaryFilters);if(q)items=items.filter(function(i){return i.name.toLowerCase().indexOf(q.toLowerCase())>-1});document.getElementById('lib-items').innerHTML=renderLibList(items)}
+function filterLib(q){var items=libItems(selectedLibTab);if(q)items=items.filter(function(i){return i.name.toLowerCase().indexOf(q.toLowerCase())>-1});var el=document.getElementById('lib-items');if(el)el.innerHTML=renderLibList(items)}
 function toggleMove(vid,text){var v=dbGetById('villains',vid);if(!v)return;v.moves.forEach(function(m){if(m.text===text)m.done=!m.done});dbUpdate('villains',vid,{moves:v.moves});renderLibrary()}
 
 /* PLAYERS */
@@ -2208,7 +2282,7 @@ function renderWizardStep2(){
   w.villainIds.forEach(function(vid){var v=dbGetById('villains',vid);if(!v)return;h+='<div class="selected-participant"><div><span class="creature-name" style="color:var(--red)">'+esc(v.name)+'</span> <span style="font-size:11px;color:var(--red)">VILLANO</span><div style="font-size:12px;color:var(--ink3)">HP '+(v.stats?v.stats.hp:'?')+' · '+esc(v.stats?v.stats.dmg:'')+'</div></div><button class="delete-btn" data-action="wz-remove-villain" data-id="'+vid+'">×</button></div>'});
   h+='</div>';
   // Creature picker with filters
-  h+='<div class="form-section"><div class="form-label">+ AGREGAR DEL BESTIARIO</div>'+renderFilterBar('wiz')+'<input type="text" class="form-input" placeholder="Buscar criatura..." oninput="filterWizPicker(this.value,\'creatures\')" style="margin-top:8px"><div class="wiz-picker" id="wiz-picker-creatures">'+renderWizCreaturePicker('')+'</div></div>';
+  h+='<div class="form-section"><div class="form-label">+ AGREGAR DEL BESTIARIO</div>'+renderFilterBar('wiz')+'<input type="text" class="form-input" placeholder="Buscar nombre, habilidad, descripción..." oninput="filterWizPicker(this.value,\'creatures\')" style="margin-top:8px"><div class="wiz-picker" id="wiz-picker-creatures">'+renderWizCreaturePicker('')+'</div></div>';
   // Villain picker
   var villains=dbGetAll('villains');
   if(villains.length){h+='<div class="form-section"><div class="form-label">+ AGREGAR VILLANO</div><div class="wiz-picker" id="wiz-picker-villains">'+renderWizVillainPicker()+'</div></div>'}
@@ -2257,10 +2331,10 @@ function renderDifficultyMeter(){
 
 function renderWizCreaturePicker(q){
   var w=sceneWizard;
-  var creatures=applyFilters(allCreatures(),wizFilters);
-  if(q)creatures=creatures.filter(function(c){return c.name.toLowerCase().indexOf(q.toLowerCase())>-1});
-  if(!creatures.length)return'<div style="font-size:13px;color:var(--ink4);padding:8px">No hay criaturas. Créalas en Biblioteca → Bestiario.</div>';
-  var h='';
+  var creatures=applyFilters(allCreatures(),wizFilters,q||'');
+  var totalC=allCreatures().length;
+  if(!creatures.length)return'<div class="bestiary-count">Mostrando 0 de '+totalC+' criaturas</div><div style="font-size:13px;color:var(--ink4);padding:8px">Ninguna criatura coincide con los filtros.</div>';
+  var h='<div class="bestiary-count">Mostrando '+creatures.length+' de '+totalC+' criaturas</div>';
   creatures.forEach(function(c){
     var already=w.creatureIds.find(function(ci){return ci.creatureId===c.id});
     h+='<div class="wiz-picker-item" data-action="wz-add-creature" data-cid="'+c.id+'"><div><span style="font-weight:600">'+esc(c.name)+'</span>'+(c._base?' <span class="base-lock">🔒</span>':'')+' <span class="difficulty-tag diff-'+(c.difficulty||'medium')+'">'+diffLabel(c.difficulty)+'</span>'+(c.role?' '+roleBadge(c.role):'')+'<div style="font-size:12px;color:var(--ink3)">HP '+c.hp+' · '+esc(c.dmg||'')+'</div></div><span style="color:var(--gold);font-size:18px">'+(already?'✓':'+')+'</span></div>';
