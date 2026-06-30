@@ -756,6 +756,30 @@ textarea.form-input{min-height:70px;line-height:1.5}
 .sort-opt{font-size:12px;padding:5px 11px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;color:var(--ink2);min-height:30px;display:inline-flex;align-items:center}
 .sort-opt.on{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:600}
 .bestiary-count{font-size:12px;color:var(--ink3);margin-bottom:8px;font-weight:600}
+
+/* PLAYER EXPANDED ABILITIES */
+.player-abilities-expanded{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+/* ARC INFO PANEL */
+.arc-info-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:16px}
+.arc-info-block .beat-info-field:first-child{margin-top:0}
+
+/* WIKI LINKING — picker + connections */
+.wiki-editor-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.wiki-toolbar-hint{font-size:12px;color:var(--ink4)}
+.modal-lg{max-width:520px;width:92%}
+.link-picker-results{max-height:50vh;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)}
+.link-picker-group{font-size:11px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;padding:8px 12px 4px;background:var(--surface2)}
+.link-picker-item{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:14px;color:var(--ink2);min-height:44px}
+.link-picker-item:active{background:var(--gold-pale)}
+.link-picker-item.link-create{color:var(--gold);font-weight:600}
+.link-picker-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.wiki-connections{margin-top:18px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-lg)}
+.wiki-conn-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.wiki-conn-list{display:flex;flex-direction:column;gap:6px}
+.wiki-conn-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:14px;color:var(--ink2)}
+.wiki-conn-remove{color:var(--ink4);cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0}
+.wiki-conn-remove:active{color:var(--red)}
+.wiki-conn-empty{font-size:13px;color:var(--ink4);line-height:1.5}
 </style>
 </head>
 <body>
@@ -771,13 +795,10 @@ textarea.form-input{min-height:70px;line-height:1.5}
   </nav>
   <hr class="sb-divider">
   <div class="sb-players" id="sb-players-bar"></div>
-  <div class="sb-settings" data-action="nav" data-type="settings">⚙️ Configuración <span style="font-size:10px;color:var(--ink4);margin-left:4px">v0629-2341</span></div>
+  <div class="sb-settings" data-action="nav" data-type="settings">⚙️ Configuración <span style="font-size:10px;color:var(--ink4);margin-left:4px">v0630-1650</span></div>
 </aside>
 <div class="main">
-  <div class="topbar">
-    <div class="breadcrumb" id="breadcrumb"></div>
-    <div class="topbar-spacer"></div>
-  </div>
+  <div class="topbar"><div class="breadcrumb" id="breadcrumb"></div><div class="topbar-spacer"></div></div>
   <div class="content">
     <div class="view active" id="view-campaign"><div id="campaign-content"></div></div>
     <div class="view" id="view-scenes"><div id="scenes-content"></div></div>
@@ -1266,6 +1287,7 @@ var currentView='campaign',selectedLibTab='npcs',selectedLibItem=null,selectedSc
 var campaignMode='macro',selectedArcIdx=0;
 var writerSceneId=null;var writerSections={hook:true,conflict:true,stakes:true,exit:true,notes:true,narrative:true};
 var currentWikiId=null;var wikiEditing=false;var wikiSearch='';
+var expandedPlayers={};
 var combat=null,expandedUnits={};
 var bestiaryFilters={difficulty:[],type:[],role:[],hp:[]};
 var bestiarySort={by:'name',dir:'asc'};
@@ -1305,6 +1327,7 @@ document.addEventListener('click',function(e){
   if(a==='add-beat-arc'){addBeatToArc(parseInt(el.dataset.arc))}
   if(a==='quick-scene'){openQuickSceneModal(el.dataset.beat)}
   if(a==='edit-beat'){openBeatInfoModal(el.dataset.arc,el.dataset.beat)}
+  if(a==='edit-arc'){openArcInfoModal(parseInt(el.dataset.arc))}
   if(a==='add-beat-detail'){addBeatToArc(parseInt(el.dataset.arc))}
   if(a==='confirm-quick-scene'){confirmQuickScene()}
   if(a==='edit-objectives'){openObjectivesModal()}
@@ -1327,6 +1350,7 @@ document.addEventListener('click',function(e){
   if(a==='end-squad-turn'){setTimeout(nextTurn,200)}
   if(a==='revive-unit'){reviveUnit(el.dataset.id)}
   if(a==='roll-d12'){rollAbility(el.dataset.uid,el.dataset.ability)}
+  if(a==='toggle-player-detail'){expandedPlayers[id]=!expandedPlayers[id];renderPlayers()}
   if(a==='scroll-to-entry'){var t=document.getElementById('entry-'+el.dataset.idx);if(t)t.scrollIntoView({behavior:'smooth',block:'center'})}
   if(a==='init-select'){toggleInitSelect(id)}
   if(a==='group-squad'){groupSelectedSquad()}
@@ -1353,6 +1377,11 @@ document.addEventListener('click',function(e){
   if(a==='writer-prev'){writerNav(-1)}
   if(a==='writer-next'){writerNav(1)}
   if(a==='wiki-link'){openWikiLink(el.dataset.title)}
+  if(a==='open-link-picker'){openLinkPicker(el.dataset.target)}
+  if(a==='link-pick'){pickLink(el.dataset.kind,el.dataset.id,el.dataset.title)}
+  if(a==='link-pick-create'){pickLinkCreate(el.dataset.title)}
+  if(a==='open-linkable'){openConnection(el.dataset.kind,el.dataset.id,el.dataset.title)}
+  if(a==='remove-connection'){removeConnection(el.dataset.kind,el.dataset.id)}
   if(a==='wiki-open'){currentWikiId=el.dataset.id;wikiEditing=false;renderWiki()}
   if(a==='wiki-new'){openNameModal('Nueva página','Título de la página',function(title){var p=wikiCreatePage(title);currentWikiId=p.id;wikiEditing=true;nav('wiki')})}
   if(a==='wiki-toggle-edit'){wikiEditing=!wikiEditing;renderWiki()}
@@ -1414,8 +1443,8 @@ function renderCampaignMacro(camp){
   h+='<div class="arcs-board">';
   (camp.arcs||[]).forEach(function(arc,ai){
     var beats=arc.beats||[];
-    h+='<div class="arc-column"><div class="arc-column-head"><div style="flex:1"><div class="arc-name">'+esc(arc.name)+'</div><div class="arc-beat-count">'+beats.length+' beat'+(beats.length!==1?'s':'')+'</div></div>';
-    h+='<div class="arc-controls"><button class="init-arrow" data-action="move-arc" data-arc="'+ai+'" data-dir="-1"'+(ai===0?' disabled':'')+'>‹</button><button class="init-arrow" data-action="move-arc" data-arc="'+ai+'" data-dir="1"'+(ai===camp.arcs.length-1?' disabled':'')+'>›</button><button class="delete-btn" data-action="del-arc" data-arc="'+ai+'">×</button></div></div>';
+    h+='<div class="arc-column"><div class="arc-column-head"><div style="flex:1"><div class="arc-name">'+esc(arc.name)+'</div><div class="arc-beat-count">'+beats.length+' beat'+(beats.length!==1?'s':'')+(arc.objective?' · 🎯':'')+'</div></div>';
+    h+='<div class="arc-controls"><button class="btn" style="font-size:11px;padding:3px 8px;min-height:28px" data-action="edit-arc" data-arc="'+ai+'">ℹ️</button><button class="init-arrow" data-action="move-arc" data-arc="'+ai+'" data-dir="-1"'+(ai===0?' disabled':'')+'>‹</button><button class="init-arrow" data-action="move-arc" data-arc="'+ai+'" data-dir="1"'+(ai===camp.arcs.length-1?' disabled':'')+'>›</button><button class="delete-btn" data-action="del-arc" data-arc="'+ai+'">×</button></div></div>';
     h+='<div class="arc-beats">';
     beats.forEach(function(b,bi){
       var beatScenes=scenes.filter(function(s){return(b.scenes||[]).indexOf(s.id)>-1});
@@ -1439,7 +1468,15 @@ function renderCampaignDetail(camp){
   // Arc selector + beat selector breadcrumb
   h+='<div class="detail-nav"><select class="filter-dd" onchange="selectedArcIdx=parseInt(this.value);selectedBeatIdx=0;renderCampaign()">';
   (camp.arcs||[]).forEach(function(a,i){h+='<option value="'+i+'"'+(i===selectedArcIdx?' selected':'')+'>'+esc(a.name)+'</option>'});
-  h+='</select><button class="btn" style="margin-left:8px" data-action="add-beat-detail" data-arc="'+selectedArcIdx+'">+ Beat</button></div>';
+  h+='</select><button class="btn" style="margin-left:8px" data-action="add-beat-detail" data-arc="'+selectedArcIdx+'">+ Beat</button><button class="btn" style="margin-left:4px" data-action="edit-arc" data-arc="'+selectedArcIdx+'">ℹ️ Info del arco</button></div>';
+  // Arc info panel
+  if(arc.description||arc.objective||arc.notes){
+    h+='<div class="arc-info-block">';
+    if(arc.description)h+='<div class="beat-info-field"><span class="beat-info-label">Descripción</span><div>'+renderLinkedText(arc.description)+'</div></div>';
+    if(arc.objective)h+='<div class="beat-info-field"><span class="beat-info-label">Objetivo del arco</span><div>'+renderLinkedText(arc.objective)+'</div></div>';
+    if(arc.notes)h+='<div class="beat-info-field"><span class="beat-info-label">Notas</span><div>'+renderLinkedText(arc.notes)+'</div></div>';
+    h+='</div>';
+  }
   // Beats accordion (within this arc)
   h+='<div class="beats-accordion">';
   (arc.beats||[]).forEach(function(b,i){
@@ -1593,7 +1630,19 @@ function filterLib(q){var items=libItems(selectedLibTab);if(q)items=items.filter
 function toggleMove(vid,text){var v=dbGetById('villains',vid);if(!v)return;v.moves.forEach(function(m){if(m.text===text)m.done=!m.done});dbUpdate('villains',vid,{moves:v.moves});renderLibrary()}
 
 /* PLAYERS */
-function renderPlayers(){var el=document.getElementById('players-content');if(!el)return;var pls=dbGetAll('players');if(!pls.length){el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay jugadores</div><div class="empty-state-desc">Agrega a los héroes de tu mesa.</div><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div>';return}var h='<div class="section-label">PERSONAJES</div><div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div><div class="player-grid">';pls.forEach(function(p){var r=resolvePlayer(p);h+='<div class="player-card" style="border-color:'+r.factionColor+'"><div class="player-card-header">'+avatarHtml(r,'width:52px;height:52px;font-size:20px;')+'<div><div class="player-card-name">'+esc(r.name)+'</div><div class="player-card-class">'+esc(r.cls)+(r.sub?' · '+esc(r.sub):'')+(r.kit?' · Kit '+esc(r.kit):'')+' · Plano '+r.plano+'</div></div></div>';h+='<div class="player-meta"><span class="player-tag faction">'+esc(r.faction)+'</span><span class="player-tag">HP '+r.hp+'</span><span class="player-tag">Aen +'+r.aenRegen+'/turno</span>'+(r.chosenFeat?'<span class="player-tag" style="background:var(--gold-pale);color:var(--gold)">'+esc(r.chosenFeat.name)+'</span>':'')+'</div>';if(r.backstory)h+='<div style="font-size:13px;color:var(--ink3);margin-top:8px;line-height:1.5">'+esc(r.backstory)+'</div>';h+='<div class="echo-tracker"><div class="echo-tracker-label">ECHO</div><div class="echo-dots">';for(var i=0;i<5;i++)h+='<div class="echo-dot'+(i<r.echo?' filled':'')+'">✦</div>';h+='</div><button class="echo-btn" data-action="sub-echo" data-id="'+p.id+'" style="padding:4px 8px;font-size:12px;min-height:32px">−</button><button class="echo-btn" data-action="add-echo" data-id="'+p.id+'" style="padding:4px 8px;font-size:12px;min-height:32px">+</button></div>';h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn" data-action="open-modal" data-type="players" data-id="'+p.id+'">Editar</button><button class="delete-btn" data-action="delete-item" data-type="players" data-id="'+p.id+'">×</button></div></div>'});h+='</div>';el.innerHTML=h}
+function renderPlayers(){var el=document.getElementById('players-content');if(!el)return;var pls=dbGetAll('players');if(!pls.length){el.innerHTML='<div class="empty-state"><div class="empty-state-title">No hay jugadores</div><div class="empty-state-desc">Agrega a los héroes de tu mesa.</div><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div>';return}var h='<div class="section-label">PERSONAJES</div><div style="margin-bottom:12px"><button class="btn btn-primary" data-action="open-modal" data-type="players">+ Agregar jugador</button></div><div class="player-grid">';pls.forEach(function(p){var r=resolvePlayer(p);h+='<div class="player-card" style="border-color:'+r.factionColor+'"><div class="player-card-header">'+avatarHtml(r,'width:52px;height:52px;font-size:20px;')+'<div><div class="player-card-name">'+esc(r.name)+'</div><div class="player-card-class">'+esc(r.cls)+(r.sub?' · '+esc(r.sub):'')+(r.kit?' · Kit '+esc(r.kit):'')+' · Plano '+r.plano+'</div></div></div>';h+='<div class="player-meta"><span class="player-tag faction">'+esc(r.faction)+'</span><span class="player-tag">HP '+r.hp+'</span><span class="player-tag">Aen +'+r.aenRegen+'/turno</span>'+(r.chosenFeat?'<span class="player-tag" style="background:var(--gold-pale);color:var(--gold)">'+esc(r.chosenFeat.name)+'</span>':'')+'</div>';if(r.backstory)h+='<div style="font-size:13px;color:var(--ink3);margin-top:8px;line-height:1.5">'+esc(r.backstory)+'</div>';h+='<div class="echo-tracker"><div class="echo-tracker-label">ECHO</div><div class="echo-dots">';for(var i=0;i<5;i++)h+='<div class="echo-dot'+(i<r.echo?' filled':'')+'">✦</div>';h+='</div><button class="echo-btn" data-action="sub-echo" data-id="'+p.id+'" style="padding:4px 8px;font-size:12px;min-height:32px">−</button><button class="echo-btn" data-action="add-echo" data-id="'+p.id+'" style="padding:4px 8px;font-size:12px;min-height:32px">+</button></div>';
+    // Expanded abilities section
+    var exp=expandedPlayers[p.id];
+    if(exp){
+      h+='<div class="player-abilities-expanded">';
+      if(r.classAbilities&&r.classAbilities.length){h+='<div class="preview-group-label">HABILIDADES DE CLASE</div>';r.classAbilities.forEach(function(a){h+=abilityLineHtml(a)})}
+      if(r.subAbilities&&r.subAbilities.length){h+='<div class="preview-group-label">HABILIDADES DE SUBCLASE</div>';r.subAbilities.forEach(function(a){h+=abilityLineHtml(a)})}
+      if(r.kitAbility){h+='<div class="preview-group-label">HABILIDAD DE KIT</div>';h+=abilityLineHtml(r.kitAbility);if(r.kitAbility.drawback)h+='<div style="font-size:11px;color:var(--red);padding:2px 0 6px 0">⚠ Drawback: '+esc(r.kitAbility.drawback)+'</div>'}
+      if(r.chosenFeat){h+='<div class="preview-group-label">FEAT DE FACCIÓN</div><div class="ability-line"><span class="ability-name">'+esc(r.chosenFeat.name)+'</span> <span style="color:var(--ink4);font-size:11px">['+esc(r.chosenFeat.attr)+']</span><div style="font-size:12px;color:var(--ink3)">'+esc(r.chosenFeat.desc)+'</div></div>'}
+      if((!r.classAbilities||!r.classAbilities.length)&&(!r.subAbilities||!r.subAbilities.length)&&!r.kitAbility&&!r.chosenFeat){h+='<div style="font-size:13px;color:var(--ink4);padding:8px 0">Este personaje no tiene clase/subclase/kit asignados. Edítalo para agregarlos.</div>'}
+      h+='</div>';
+    }
+    h+='<div style="display:flex;gap:6px;margin-top:10px"><button class="btn'+(exp?' btn-primary':'')+'" data-action="toggle-player-detail" data-id="'+p.id+'">'+(exp?'▲ Ocultar detalle':'▼ Ver detalle')+'</button><button class="btn" data-action="open-modal" data-type="players" data-id="'+p.id+'">Editar</button><button class="delete-btn" data-action="delete-item" data-type="players" data-id="'+p.id+'">×</button></div></div>'});h+='</div>';el.innerHTML=h}
 function adjustEcho(pid,d){var p=dbGetById('players',pid);if(!p)return;p.echo=Math.max(0,Math.min(5,(p.echo||0)+d));dbUpdate('players',pid,{echo:p.echo});renderPlayers()}
 
 /* SCENE BUILDER */
@@ -2035,6 +2084,116 @@ function renderInitiative(){
 function updateSquadName(squadId,val){var sq=initSetup.squads.find(function(s){return s.id===squadId});if(sq)sq.name=val}
 
 /* ══════════════════════════════════════════════
+   WIKI LINKING — buscador de entidades + inserción
+   ══════════════════════════════════════════════ */
+// Returns all linkable entities: wiki pages, scenes, creatures, players
+function allLinkables(){
+  var out=[];
+  dbGetAll('wiki').forEach(function(p){out.push({kind:'wiki',id:p.id,title:p.title,icon:'📄'})});
+  dbGetAll('scenes').forEach(function(s){out.push({kind:'scene',id:s.id,title:s.name,icon:'🎬'})});
+  allCreatures().forEach(function(c){out.push({kind:'creature',id:c.id,title:c.name,icon:'🐾'})});
+  dbGetAll('players').forEach(function(p){out.push({kind:'player',id:p.id,title:p.name,icon:'🧙'})});
+  return out;
+}
+// Open the link picker modal (used by wiki editor "Enlazar" button)
+var linkPickerTarget=null; // 'editor' (insert into textarea) or 'connection' (add to connections panel)
+function openLinkPicker(target){
+  linkPickerTarget=target;
+  var h='<div class="modal-overlay"><div class="modal modal-lg"><div class="modal-title">Enlazar a...</div>';
+  h+='<input type="text" class="form-input" id="link-search" placeholder="Buscar página, escena, criatura o personaje..." oninput="renderLinkPickerResults(this.value)" style="margin-bottom:10px" autofocus>';
+  h+='<div id="link-picker-results" class="link-picker-results">'+renderLinkPickerResultsHtml('')+'</div>';
+  h+='<div class="modal-actions"><button class="btn" data-action="close-modal">Cancelar</button></div></div></div>';
+  document.getElementById('modal-root').innerHTML=h;
+  setTimeout(function(){var i=document.getElementById('link-search');if(i)i.focus()},50);
+}
+function renderLinkPickerResultsHtml(q){
+  var items=allLinkables();
+  var query=(q||'').toLowerCase().trim();
+  if(query)items=items.filter(function(it){return it.title.toLowerCase().indexOf(query)>-1});
+  var h='';
+  // If query doesn't match any wiki page exactly, offer to create it
+  if(query){
+    var exactWiki=allLinkables().some(function(it){return it.kind==='wiki'&&it.title.toLowerCase()===query});
+    if(!exactWiki){
+      h+='<div class="link-picker-item link-create" data-action="link-pick-create" data-title="'+esc(q.trim())+'"><span class="link-picker-icon">✚</span><span>Crear página "<strong>'+esc(q.trim())+'</strong>"</span></div>';
+    }
+  }
+  if(!items.length&&!h)return '<div style="padding:12px;color:var(--ink4);font-size:13px">Sin resultados. Escribe para crear una página nueva.</div>';
+  var groups={wiki:[],scene:[],creature:[],player:[]};
+  items.forEach(function(it){if(groups[it.kind])groups[it.kind].push(it)});
+  var labels={wiki:'Páginas',scene:'Escenas',creature:'Criaturas',player:'Personajes'};
+  ['wiki','scene','creature','player'].forEach(function(k){
+    if(groups[k].length){
+      h+='<div class="link-picker-group">'+labels[k]+'</div>';
+      groups[k].slice(0,8).forEach(function(it){
+        h+='<div class="link-picker-item" data-action="link-pick" data-kind="'+it.kind+'" data-id="'+it.id+'" data-title="'+esc(it.title)+'"><span class="link-picker-icon">'+it.icon+'</span><span>'+esc(it.title)+'</span></div>';
+      });
+    }
+  });
+  return h;
+}
+function renderLinkPickerResults(q){
+  var el=document.getElementById('link-picker-results');
+  if(el)el.innerHTML=renderLinkPickerResultsHtml(q);
+}
+// When a link is picked
+function pickLink(kind,id,title){
+  if(linkPickerTarget==='editor'){
+    insertLinkIntoEditor(title);
+  } else if(linkPickerTarget==='connection'){
+    addConnection(kind,id,title);
+  }
+  closeModal();
+}
+function pickLinkCreate(title){
+  var page=wikiCreatePage(title);
+  if(linkPickerTarget==='editor'){
+    insertLinkIntoEditor(title);
+  } else if(linkPickerTarget==='connection'){
+    addConnection('wiki',page.id,title);
+  }
+  closeModal();
+}
+// Insert [[title]] at cursor position in the wiki editor textarea
+function insertLinkIntoEditor(title){
+  var ta=document.getElementById('wiki-editor');
+  if(!ta){return}
+  var start=ta.selectionStart||0;
+  var end=ta.selectionEnd||0;
+  var val=ta.value;
+  var insert='[['+title+']]';
+  ta.value=val.substring(0,start)+insert+val.substring(end);
+  saveWikiContent(ta.value);
+  // Reposition cursor after insertion
+  var newPos=start+insert.length;
+  setTimeout(function(){ta.focus();ta.setSelectionRange(newPos,newPos)},10);
+}
+// CONNECTIONS PANEL — explicit related links stored on the page
+function addConnection(kind,id,title){
+  if(!currentWikiId)return;
+  var page=dbGetById('wiki',currentWikiId);if(!page)return;
+  var conns=page.connections||[];
+  if(conns.some(function(c){return c.kind===kind&&c.id===id}))return; // no dupes
+  conns.push({kind:kind,id:id,title:title});
+  dbUpdate('wiki',currentWikiId,{connections:conns});
+  renderWiki();
+}
+function removeConnection(kind,id){
+  if(!currentWikiId)return;
+  var page=dbGetById('wiki',currentWikiId);if(!page)return;
+  var conns=(page.connections||[]).filter(function(c){return !(c.kind===kind&&c.id===id)});
+  dbUpdate('wiki',currentWikiId,{connections:conns});
+  renderWiki();
+}
+function openConnection(kind,id,title){
+  if(kind==='wiki'){currentWikiId=id;wikiEditing=false;renderWiki()}
+  else if(kind==='scene'){selectedSceneId=id;nav('scenes');renderSceneBuilder(id)}
+  else if(kind==='creature'){selectedLibTab='bestiary';selectedLibItem=id;nav('library')}
+  else if(kind==='player'){nav('players')}
+}
+function connIcon(kind){return{wiki:'📄',scene:'🎬',creature:'🐾',player:'🧙'}[kind]||'🔗'}
+
+/* ══════════════════════════════════════════════
    WIKI / LORE — pages with [[ ]] links (RESTORED)
    ══════════════════════════════════════════════ */
 function wikiFindByTitle(title){
@@ -2053,14 +2212,28 @@ function openWikiLink(title){
   wikiEditing=!page.content;
   nav('wiki');
 }
+function findLinkable(name){
+  var t=name.trim().toLowerCase();
+  var all=allLinkables();
+  // priority: wiki > scene > creature > player
+  var order=['wiki','scene','creature','player'];
+  for(var i=0;i<order.length;i++){
+    var match=all.find(function(it){return it.kind===order[i]&&it.title.trim().toLowerCase()===t});
+    if(match)return match;
+  }
+  return null;
+}
 function renderLinkedText(text){
   if(!text)return'';
   var safe=esc(text);
   return safe.replace(/\[\[([^\]]+)\]\]/g,function(m,name){
     var trimmed=name.trim();
-    var exists=wikiFindByTitle(trimmed);
-    var cls=exists?'wikilink':'wikilink wikilink-new';
-    return '<span class="'+cls+'" data-action="wiki-link" data-title="'+esc(trimmed)+'">'+esc(trimmed)+'</span>';
+    var ent=findLinkable(trimmed);
+    if(ent){
+      return '<span class="wikilink" data-action="open-linkable" data-kind="'+ent.kind+'" data-id="'+ent.id+'" data-title="'+esc(trimmed)+'">'+ent.icon+' '+esc(trimmed)+'</span>';
+    }
+    // not found: treat as new wiki page
+    return '<span class="wikilink wikilink-new" data-action="wiki-link" data-title="'+esc(trimmed)+'">'+esc(trimmed)+'</span>';
   });
 }
 function renderLinkedParagraphs(text){
@@ -2079,13 +2252,25 @@ function renderWiki(){
     h+='<div class="wiki-main">';
     h+='<div class="wiki-page-header"><input type="text" class="wiki-title-input" id="wiki-title" value="'+esc(page.title)+'" oninput="saveWikiTitle(this.value)" placeholder="Título de la página"><div style="display:flex;gap:8px"><button class="btn'+(wikiEditing?' btn-primary':'')+'" data-action="wiki-toggle-edit">'+(wikiEditing?'✓ Leer':'✍️ Editar')+'</button><button class="delete-btn" data-action="wiki-delete" data-id="'+page.id+'">×</button></div></div>';
     if(wikiEditing){
-      h+='<textarea class="wiki-editor" id="wiki-editor" placeholder="Escribe el lore aquí. Usa [[corchetes dobles]] para enlazar a otras páginas." oninput="saveWikiContent(this.value)">'+esc(page.content||'')+'</textarea>';
-      h+='<div class="wiki-hint">💡 Escribe [[nombre]] para crear o enlazar a otra página.</div>';
+      h+='<div class="wiki-editor-toolbar"><button class="btn btn-primary" data-action="open-link-picker" data-target="editor">🔗 Insertar enlace</button><span class="wiki-toolbar-hint">o escribe [[nombre]] directo</span></div>';
+      h+='<textarea class="wiki-editor" id="wiki-editor" placeholder="Escribe el lore aquí. Toca 🔗 Insertar enlace para conectar con páginas, escenas, criaturas o personajes." oninput="saveWikiContent(this.value)">'+esc(page.content||'')+'</textarea>';
     } else {
       h+='<div class="wiki-reading">'+renderLinkedParagraphs(page.content)+'</div>';
-      var refs=wikiBacklinks(page.title);
-      if(refs.length){h+='<div class="wiki-backlinks"><div class="form-label">MENCIONADA EN</div>';refs.forEach(function(r){h+='<div class="wiki-backlink" data-action="'+r.action+'" data-id="'+r.id+'"'+(r.title?' data-title="'+esc(r.title)+'"':'')+'>'+r.icon+' '+esc(r.label)+'</div>'});h+='</div>'}
     }
+    // CONNECTIONS PANEL (always visible)
+    h+='<div class="wiki-connections"><div class="wiki-conn-header"><span class="form-label" style="margin:0">🔗 CONEXIONES</span><button class="btn" style="font-size:12px;padding:4px 10px;min-height:30px" data-action="open-link-picker" data-target="connection">+ Agregar</button></div>';
+    var conns=page.connections||[];
+    if(conns.length){
+      h+='<div class="wiki-conn-list">';
+      conns.forEach(function(c){h+='<div class="wiki-conn-item"><span data-action="open-linkable" data-kind="'+c.kind+'" data-id="'+c.id+'" data-title="'+esc(c.title)+'" style="flex:1;cursor:pointer">'+connIcon(c.kind)+' '+esc(c.title)+'</span><span class="wiki-conn-remove" data-action="remove-connection" data-kind="'+c.kind+'" data-id="'+c.id+'">×</span></div>'});
+      h+='</div>';
+    } else {
+      h+='<div class="wiki-conn-empty">Sin conexiones. Agrega enlaces a páginas, escenas, criaturas o personajes relacionados.</div>';
+    }
+    h+='</div>';
+    // Backlinks
+    var refs=wikiBacklinks(page.title);
+    if(refs.length){h+='<div class="wiki-backlinks"><div class="form-label">MENCIONADA EN</div>';refs.forEach(function(r){h+='<div class="wiki-backlink" data-action="'+r.action+'" data-id="'+r.id+'"'+(r.title?' data-title="'+esc(r.title)+'"':'')+'>'+r.icon+' '+esc(r.label)+'</div>'});h+='</div>'}
     h+='</div></div>';
     el.innerHTML=h;
     return;
@@ -2152,6 +2337,27 @@ function importFile(input){var f=input.files[0];if(!f)return;var r=new FileReade
 /* MODALS */
 var pendingNameCallback=null;
 var pendingQuickBeat=null;
+function openArcInfoModal(arcIdx){
+  var camp=dbLoad('campaign');if(!camp)return;
+  var arc=(camp.arcs||[])[arcIdx];if(!arc)return;
+  var h='<div class="modal-overlay"><div class="modal"><div class="modal-title">Info del arco: '+esc(arc.name)+'</div>';
+  h+='<div class="form-section"><div class="form-label">Nombre</div><input class="form-input" id="arc-name" type="text" value="'+esc(arc.name)+'"></div>';
+  h+='<div class="form-section"><div class="form-label">Descripción</div><textarea class="form-input" id="arc-desc" placeholder="¿De qué trata este arco narrativo? Usa [[corchetes]] para enlazar lore.">'+esc(arc.description||'')+'</textarea></div>';
+  h+='<div class="form-section"><div class="form-label">Objetivo del arco</div><textarea class="form-input" id="arc-obj" placeholder="¿Qué debe lograrse en este arco?">'+esc(arc.objective||'')+'</textarea></div>';
+  h+='<div class="form-section"><div class="form-label">Notas</div><textarea class="form-input" id="arc-notes" placeholder="Tono, temas, giros, recordatorios...">'+esc(arc.notes||'')+'</textarea></div>';
+  h+='<div class="modal-actions"><button class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" onclick="saveArcInfo('+arcIdx+')">Guardar</button></div></div></div>';
+  document.getElementById('modal-root').innerHTML=h;
+}
+function saveArcInfo(arcIdx){
+  var camp=dbLoad('campaign');if(!camp)return;
+  var arc=(camp.arcs||[])[arcIdx];if(!arc)return;
+  function gv(id){var e=document.getElementById(id);return e?e.value.trim():''}
+  arc.name=gv('arc-name')||arc.name;
+  arc.description=gv('arc-desc');
+  arc.objective=gv('arc-obj');
+  arc.notes=gv('arc-notes');
+  dbSave('campaign',camp);closeModal();renderCampaign();
+}
 function openBeatInfoModal(arcIdx,beatId){
   var camp=dbLoad('campaign');if(!camp)return;
   var beat=null;
@@ -2167,11 +2373,12 @@ function openBeatInfoModal(arcIdx,beatId){
 }
 function saveBeatInfo(beatId){
   var camp=dbLoad('campaign');if(!camp)return;
+  function gv(id){var e=document.getElementById(id);return e?e.value.trim():''}
   (camp.arcs||[]).forEach(function(a){(a.beats||[]).forEach(function(b){if(b.id===beatId){
-    b.name=document.getElementById('beat-name').value.trim()||b.name;
-    b.description=document.getElementById('beat-desc').value.trim();
-    b.objective=document.getElementById('beat-obj').value.trim();
-    b.notes=document.getElementById('beat-notes').value.trim();
+    b.name=gv('beat-name')||b.name;
+    b.description=gv('beat-desc');
+    b.objective=gv('beat-obj');
+    b.notes=gv('beat-notes');
   }})});
   dbSave('campaign',camp);closeModal();renderCampaign();
 }
